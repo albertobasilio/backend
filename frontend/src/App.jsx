@@ -17,6 +17,9 @@ import HistoryPage from './pages/HistoryPage';
 import NotFoundPage from './pages/NotFoundPage';
 import PlansPage from './pages/PlansPage';
 import AdminUsersPage from './pages/AdminUsersPage';
+import ChallengesPage from './pages/ChallengesPage';
+import AdminDashboardPage from './pages/AdminDashboardPage';
+import AdminRecipesPage from './pages/AdminRecipesPage';
 
 const ProtectedRoute = () => {
     const { user, loading } = useAuth();
@@ -54,6 +57,7 @@ const AppRoutes = () => {
             <Route path="/login" element={user ? <Navigate to="/" /> : <LoginPage />} />
             <Route path="/register" element={user ? <Navigate to="/" /> : <RegisterPage />} />
             <Route path="/plans" element={<PlansPage />} />
+            <Route path="/challenges" element={<ChallengesPage />} />
 
             {/* Protected routes with shared layout */}
             <Route element={<ProtectedRoute />}>
@@ -73,7 +77,9 @@ const AppRoutes = () => {
                         <Route path="/nutrition" element={<NutritionPage />} />
                     </Route>
                     <Route element={<AdminRoute />}>
+                        <Route path="/admin" element={<AdminDashboardPage />} />
                         <Route path="/admin/users" element={<AdminUsersPage />} />
+                        <Route path="/admin/recipes" element={<AdminRecipesPage />} />
                     </Route>
                 </Route>
             </Route>

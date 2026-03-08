@@ -5,7 +5,6 @@ const asyncHandler = require('../middleware/asyncHandler');
 const { AppError } = require('../middleware/errorHandler');
 const logger = require('../utils/logger');
 const { sendRecoveryCode } = require('../services/emailService');
-require('dotenv').config();
 
 // Register
 exports.register = asyncHandler(async (req, res) => {

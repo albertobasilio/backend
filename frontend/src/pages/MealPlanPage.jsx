@@ -37,7 +37,7 @@ const MealPlanPage = () => {
                 recipeService.getAll()
             ]);
             setPlans(plansRes.data);
-            setRecipes(recipesRes.data);
+            setRecipes((recipesRes.data || []).filter(r => !r.is_locked));
         } catch (err) {
             console.error(err);
         } finally {

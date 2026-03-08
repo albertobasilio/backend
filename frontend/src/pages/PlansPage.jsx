@@ -18,6 +18,7 @@ const PlansPage = () => {
             headline: 'Entrada para testar o sistema com recursos limitados',
             features: [
                 '1 scan por dia para testar a experiencia',
+                'Modo "o que tenho em casa" com lista manual',
                 'Nao inclui historico de scans, favoritos e plano semanal',
                 'Nao inclui nutricao nem lista de compras'
             ],
@@ -37,7 +38,8 @@ const PlansPage = () => {
             features: [
                 '5 scans por dia para manter constancia',
                 'Historico de scans e favoritos para nao perder ideias',
-                'Inclui plano semanal, mas ainda sem nutricao e lista de compras'
+                'Inclui plano semanal, mas ainda sem nutricao e lista de compras',
+                'Desafios semanais para manter consistencia'
             ],
             color: 'rgba(52, 211, 153, 0.1)',
             iconColor: 'var(--color-primary)',
@@ -56,7 +58,8 @@ const PlansPage = () => {
             features: [
                 '8 scans por dia para rotina intensa',
                 'Tudo do Basico sem as limitacoes de nutricao e compras',
-                'Nutricao detalhada e lista de compras inteligente por refeicao'
+                'Nutricao detalhada e lista de compras inteligente por refeicao',
+                'Receitas regionais exclusivas (selecionadas)'
             ],
             color: 'rgba(59, 130, 246, 0.15)',
             iconColor: '#60a5fa',
@@ -75,6 +78,7 @@ const PlansPage = () => {
             features: [
                 '20 scans por dia para liberdade total',
                 'Tudo do Pro com folga para uso intensivo',
+                'Receitas regionais exclusivas e conteudos premium',
                 'Prioridade maxima no suporte e acesso antecipado a novidades'
             ],
             color: 'rgba(168, 85, 247, 0.15)',

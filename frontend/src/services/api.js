@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_URL = 'http://localhost:5000/api';
+const API_URL = 'http://102.211.186.44:5000/api';
 
 const api = axios.create({
     baseURL: API_URL,
@@ -46,6 +46,7 @@ export const ingredientService = {
     getById: (id) => api.get(`/ingredients/${id}`),
     saveScan: (data) => api.post('/ingredients/scan', data),
     getScanHistory: () => api.get('/ingredients/history/scans'),
+    getSubstitutions: (items) => api.post('/ingredients/substitutions', { items }),
 };
 
 // Recipes
@@ -105,6 +106,18 @@ export const favoriteService = {
 export const adminService = {
     getUsers: () => api.get('/admin/users'),
     updateUserAccess: (id, data) => api.put(`/admin/users/${id}/access`, data),
+    getMetrics: () => api.get('/admin/metrics'),
+    getRecipes: (params) => api.get('/admin/recipes', { params }),
+    createRecipe: (data) => api.post('/admin/recipes', data),
+    updateRecipe: (id, data) => api.put(`/admin/recipes/${id}`, data),
+    deleteRecipe: (id) => api.delete(`/admin/recipes/${id}`),
+};
+
+// Challenges
+export const challengeService = {
+    getActive: () => api.get('/challenges/active'),
+    join: (id) => api.post(`/challenges/${id}/join`),
+    getMine: () => api.get('/challenges/mine'),
 };
 
 export default api;

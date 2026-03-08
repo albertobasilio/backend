@@ -2,6 +2,7 @@ const db = require('../config/database');
 const aiService = require('../services/aiService');
 const asyncHandler = require('../middleware/asyncHandler');
 const { AppError } = require('../middleware/errorHandler');
+const { PLAN_ORDER, hasRequiredPlan } = require('../config/accessLevels');
 
 // Get all recipes with optional filters (improved with advanced search)
 exports.getAll = asyncHandler(async (req, res) => {
@@ -41,7 +42,17 @@ exports.getAll = asyncHandler(async (req, res) => {
 
     query += ' ORDER BY created_at DESC';
     const [rows] = await db.query(query, params);
-    res.json(rows);
+
+    const userPlan = PLAN_ORDER.includes(req.user?.plan) ? req.user.plan : 'free';
+    const isAdmin = req.user?.role === 'admin';
+
+    const mapped = rows.map(r => {
+        const minPlan = PLAN_ORDER.includes(r.min_plan) ? r.min_plan : 'free';
+        const isLocked = !isAdmin && !hasRequiredPlan(userPlan, minPlan);
+        return { ...r, min_plan: minPlan, is_locked: isLocked };
+    });
+
+    res.json(mapped);
 });
 
 // Get recipe by ID with ingredients
@@ -49,6 +60,14 @@ exports.getById = asyncHandler(async (req, res) => {
     const [recipes] = await db.query('SELECT * FROM recipes WHERE id = ?', [req.params.id]);
     if (recipes.length === 0) {
         throw new AppError('Receita não encontrada.', 404);
+    }
+
+    const recipe = recipes[0];
+    const minPlan = PLAN_ORDER.includes(recipe.min_plan) ? recipe.min_plan : 'free';
+    const userPlan = PLAN_ORDER.includes(req.user?.plan) ? req.user.plan : 'free';
+    const isAdmin = req.user?.role === 'admin';
+    if (!isAdmin && !hasRequiredPlan(userPlan, minPlan)) {
+        throw new AppError(`Plano ${minPlan} ou superior necessário para acessar esta receita.`, 403);
     }
 
     const [ingredients] = await db.query(
@@ -59,17 +78,21 @@ exports.getById = asyncHandler(async (req, res) => {
         [req.params.id]
     );
 
-    res.json({ ...recipes[0], ingredients });
+    res.json({ ...recipe, ingredients });
 });
 
 // Get PUBLIC recipe by ID (for sharing - no auth required)
 exports.getPublicById = asyncHandler(async (req, res) => {
     const [recipes] = await db.query(
-        'SELECT id, title, description, instructions, prep_time_min, cook_time_min, servings, difficulty, region, calories, protein, carbs, fat, fiber, iron, image_url, tags FROM recipes WHERE id = ?',
+        'SELECT id, title, description, instructions, prep_time_min, cook_time_min, servings, difficulty, region, calories, protein, carbs, fat, fiber, iron, image_url, tags, min_plan FROM recipes WHERE id = ?',
         [req.params.id]
     );
     if (recipes.length === 0) {
         throw new AppError('Receita não encontrada.', 404);
+    }
+    const minPlan = PLAN_ORDER.includes(recipes[0].min_plan) ? recipes[0].min_plan : 'free';
+    if (!hasRequiredPlan('free', minPlan)) {
+        throw new AppError('Receita indisponível publicamente.', 403);
     }
 
     const [ingredients] = await db.query(
@@ -121,7 +144,15 @@ exports.getMatchingRecipes = asyncHandler(async (req, res) => {
         ingredientIds
     );
 
-    res.json(rows);
+    const userPlan = PLAN_ORDER.includes(req.user?.plan) ? req.user.plan : 'free';
+    const isAdmin = req.user?.role === 'admin';
+    const mapped = rows.map(r => {
+        const minPlan = PLAN_ORDER.includes(r.min_plan) ? r.min_plan : 'free';
+        const isLocked = !isAdmin && !hasRequiredPlan(userPlan, minPlan);
+        return { ...r, min_plan: minPlan, is_locked: isLocked };
+    });
+
+    res.json(mapped);
 });
 
 // Save AI generated recipe to database (batch insert for ingredients)

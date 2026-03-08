@@ -1,6 +1,7 @@
 const db = require('../config/database');
 const logger = require('../utils/logger');
 const asyncHandler = require('../middleware/asyncHandler');
+const { addSubstitutionsToMissing } = require('../services/substitutionService');
 
 // Get all ingredients
 exports.getAll = asyncHandler(async (req, res) => {
@@ -67,4 +68,14 @@ exports.getScanHistory = asyncHandler(async (req, res) => {
         [req.user.id]
     );
     res.json(rows);
+});
+
+// Suggest substitutions for missing ingredients
+exports.getSubstitutions = asyncHandler(async (req, res) => {
+    const { items } = req.body;
+    if (!items || !Array.isArray(items) || items.length === 0) {
+        return res.status(400).json({ message: 'Forneça itens para substituição.' });
+    }
+    const result = await addSubstitutionsToMissing(items);
+    res.json({ items: result });
 });

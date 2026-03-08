@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { recipeService, nutritionService } from '../services/api';
-import { ScanLine, ChefHat, CalendarDays, BarChart3, Heart, History, Clock, Flame } from 'lucide-react';
+import { ScanLine, ChefHat, CalendarDays, BarChart3, Heart, History, Clock, Flame, Trophy } from 'lucide-react';
 
 const SkeletonCard = () => (
     <div className="skeleton-card">
@@ -19,6 +19,7 @@ const quickActions = [
     { path: '/history', icon: History, label: 'Histórico', desc: 'Scans anteriores', variant: 'history' },
     { path: '/meal-plan', icon: CalendarDays, label: 'Plano Semanal', desc: 'Organize refeições', variant: 'plan' },
     { path: '/nutrition', icon: BarChart3, label: 'Nutrição', desc: 'Saúde e bem-estar', variant: 'nutrition' },
+    { path: '/challenges', icon: Trophy, label: 'Desafios', desc: 'Metas semanais', variant: 'history' },
 ];
 
 const DashboardPage = () => {
@@ -95,9 +96,14 @@ const DashboardPage = () => {
                     </div>
                 ) : recipes.length > 0 ? (
                     <div className="card-grid">
-                        {recipes.map((recipe, idx) => (
-                            <Link to={`/recipes/${recipe.id}`} key={recipe.id} style={{ textDecoration: 'none', color: 'inherit' }}>
-                                <div className={`recipe-card animate-fadeInUp stagger-${idx + 1}`}>
+                        {recipes.map((recipe, idx) => {
+                            const CardWrapper = recipe.is_locked ? 'div' : Link;
+                            const wrapperProps = recipe.is_locked
+                                ? { key: recipe.id, style: { textDecoration: 'none', color: 'inherit', cursor: 'not-allowed' } }
+                                : { key: recipe.id, to: `/recipes/${recipe.id}`, style: { textDecoration: 'none', color: 'inherit' } };
+                            return (
+                            <CardWrapper {...wrapperProps}>
+                                <div className={`recipe-card animate-fadeInUp stagger-${idx + 1}`} style={recipe.is_locked ? { opacity: 0.7 } : null}>
                                     {recipe.image_url && (
                                         <div style={{ width: '100%', height: 120, overflow: 'hidden' }}>
                                             <img
@@ -117,13 +123,18 @@ const DashboardPage = () => {
                                             <span><Clock size={13} /> {(recipe.prep_time_min || 0) + (recipe.cook_time_min || 0)}min</span>
                                             <span><Flame size={13} /> {recipe.calories}kcal</span>
                                         </div>
-                                        {recipe.region && (
-                                            <span className="recipe-badge region">{recipe.region}</span>
-                                        )}
+                                        <div style={{ display: 'flex', gap: 6 }}>
+                                            {recipe.region && (
+                                                <span className="recipe-badge region">{recipe.region}</span>
+                                            )}
+                                            {recipe.is_locked && (
+                                                <span className="recipe-badge difficulty">Bloqueado</span>
+                                            )}
+                                        </div>
                                     </div>
                                 </div>
-                            </Link>
-                        ))}
+                            </CardWrapper>
+                        );})}
                     </div>
                 ) : (
                     <div className="card animate-fadeInUp" style={{ textAlign: 'center', padding: 32 }}>

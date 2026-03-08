@@ -69,8 +69,13 @@ const FavoritesPage = () => {
                 </div>
             ) : (
                 <div className="card-grid">
-                    {favorites.map(recipe => (
-                        <div key={recipe.id} className="card" style={{ position: 'relative' }}>
+                    {favorites.map(recipe => {
+                        const CardWrapper = recipe.is_locked ? 'div' : Link;
+                        const wrapperProps = recipe.is_locked
+                            ? { style: { textDecoration: 'none', color: 'inherit', cursor: 'not-allowed' } }
+                            : { to: `/recipes/${recipe.id}`, style: { textDecoration: 'none', color: 'inherit' } };
+                        return (
+                        <div key={recipe.id} className="card" style={{ position: 'relative', opacity: recipe.is_locked ? 0.7 : 1 }}>
                             <button
                                 onClick={() => removeFavorite(recipe.id)}
                                 className="favorite-btn active"
@@ -80,7 +85,7 @@ const FavoritesPage = () => {
                                 ❤️
                             </button>
 
-                            <Link to={`/recipes/${recipe.id}`} style={{ textDecoration: 'none', color: 'inherit' }}>
+                            <CardWrapper {...wrapperProps}>
                                 <h3 style={{ fontSize: '1rem', fontWeight: 700, marginBottom: 8, paddingRight: 40 }}>
                                     {recipe.title}
                                 </h3>
@@ -91,8 +96,9 @@ const FavoritesPage = () => {
                                     <span className="info-pill">⏱ {(recipe.prep_time_min || 0) + (recipe.cook_time_min || 0)}min</span>
                                     <span className="info-pill">🔥 {recipe.calories || 0}kcal</span>
                                     {recipe.region && <span className="info-pill">📍 {recipe.region}</span>}
+                                    {recipe.is_locked && <span className="info-pill">🔒 Bloqueado</span>}
                                 </div>
-                            </Link>
+                            </CardWrapper>
 
                             {recipe.favorited_at && (
                                 <p style={{ fontSize: '.7rem', color: 'var(--text-muted)', marginTop: 10 }}>
@@ -100,7 +106,7 @@ const FavoritesPage = () => {
                                 </p>
                             )}
                         </div>
-                    ))}
+                    );})}
                 </div>
             )}
         </div>

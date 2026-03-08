@@ -73,8 +73,12 @@ const RecipeResultCard = ({ recipe, isOptional }) => {
 
     // Parse missing_ingredients — supports both array of strings and array of objects
     const missingItems = (recipe.missing_ingredients || []).map(item => {
-        if (typeof item === 'string') return { name: item, estimated_price_mt: null };
-        return item;
+        if (typeof item === 'string') return { name: item, estimated_price_mt: null, substitutions: [] };
+        return {
+            name: item.name,
+            estimated_price_mt: item.estimated_price_mt ?? null,
+            substitutions: Array.isArray(item.substitutions) ? item.substitutions : []
+        };
     });
 
     return (
@@ -132,6 +136,18 @@ const RecipeResultCard = ({ recipe, isOptional }) => {
                                 </span>
                             ))}
                         </div>
+
+                        {missingItems.some(i => i.substitutions?.length) && (
+                            <div style={{ marginTop: 10, fontSize: '.78rem', color: 'var(--text-secondary)' }}>
+                                {missingItems.map((item, j) => (
+                                    item.substitutions?.length > 0 ? (
+                                        <div key={`sub-${j}`} style={{ marginBottom: 6 }}>
+                                            <strong>{item.name}:</strong> {item.substitutions.join(', ')}
+                                        </div>
+                                    ) : null
+                                ))}
+                            </div>
+                        )}
                         
                     </div>
                 )}
@@ -241,6 +257,7 @@ const ScanPage = () => {
     const [scanMessage, setScanMessage] = useState(scanMessages[0]);
     const [imageQuality, setImageQuality] = useState(null);
     const [manualInput, setManualInput] = useState('');
+    const [pantryInput, setPantryInput] = useState('');
     const [editingIdx, setEditingIdx] = useState(null);
     const [editingName, setEditingName] = useState('');
     const [showLimitModal, setShowLimitModal] = useState(false);
@@ -400,6 +417,32 @@ const ScanPage = () => {
         toast.success(`"${name}" removido`);
     };
 
+    const parsePantryItems = () => {
+        return pantryInput
+            .split(/\n|,/)
+            .map(s => s.trim())
+            .filter(Boolean);
+    };
+
+    const startPantryMode = () => {
+        const items = parsePantryItems();
+        if (items.length === 0) {
+            setError('Digite pelo menos 1 produto da sua despensa.');
+            return;
+        }
+        const newDetected = items.map(name => ({
+            name,
+            emoji: '🏠',
+            confidence: 1,
+            category: 'despensa'
+        }));
+        setDetected(newDetected);
+        setConfirmed(items);
+        setStep('confirm');
+        setError('');
+        toast.success(`${items.length} itens carregados da despensa!`);
+    };
+
     const handleGenerateRecipes = async () => {
         if (confirmed.length === 0) return setError('Selecione pelo menos 1 produto.');
         setGeneratingRecipes(true);
@@ -407,8 +450,9 @@ const ScanPage = () => {
         try {
             // Save scan (non-blocking — don't fail if save fails)
             try {
+                const isPantryOnly = !image && !imagePreview;
                 await ingredientService.saveScan({
-                    scan_type: 'IA Scan',
+                    scan_type: isPantryOnly ? 'Despensa' : 'IA Scan',
                     detected_ingredients: detected,
                     confirmed_ingredients: confirmed
                 });
@@ -445,6 +489,7 @@ const ScanPage = () => {
         setError('');
         setImageQuality(null);
         setManualInput('');
+        setPantryInput('');
         setShowLimitModal(false);
         setLimitMessage('');
     };
@@ -594,6 +639,29 @@ const ScanPage = () => {
                             </div>
                         </div>
                     )}
+
+                    {/* Pantry Mode */}
+                    <div className="card" style={{ marginTop: 20 }}>
+                        <h3 style={{ marginBottom: 8 }}>🏠 Modo "O que tenho em casa"</h3>
+                        <p style={{ color: 'var(--text-secondary)', marginBottom: 12 }}>
+                            Escreva os itens da sua despensa (separados por vírgula ou linha).
+                        </p>
+                        <textarea
+                            className="form-control"
+                            rows={4}
+                            placeholder="Ex: arroz, feijão, tomate, cebola..."
+                            value={pantryInput}
+                            onChange={e => setPantryInput(e.target.value)}
+                        />
+                        <div style={{ display: 'flex', gap: 10, marginTop: 12 }}>
+                            <button className="btn btn-secondary" onClick={() => setPantryInput('')}>
+                                Limpar
+                            </button>
+                            <button className="btn btn-primary" onClick={startPantryMode}>
+                                Usar Itens
+                            </button>
+                        </div>
+                    </div>
                 </div>
             )}
 

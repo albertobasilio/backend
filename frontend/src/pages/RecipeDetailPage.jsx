@@ -10,6 +10,8 @@ const RecipeDetailPage = () => {
     const [isFavorite, setIsFavorite] = useState(false);
     const [favLoading, setFavLoading] = useState(false);
     const [enriching, setEnriching] = useState(false);
+    const [locked, setLocked] = useState(false);
+    const [lockedMessage, setLockedMessage] = useState('');
     const toast = useToast();
 
     useEffect(() => {
@@ -22,7 +24,15 @@ const RecipeDetailPage = () => {
                 recipeService.getById(id),
                 favoriteService.check(id)
             ]);
-            if (recipeRes.status === 'fulfilled') setRecipe(recipeRes.value.data);
+            if (recipeRes.status === 'fulfilled') {
+                setRecipe(recipeRes.value.data);
+            } else {
+                const status = recipeRes.reason?.response?.status;
+                if (status === 403) {
+                    setLocked(true);
+                    setLockedMessage(recipeRes.reason?.response?.data?.message || 'Receita disponível apenas em planos superiores.');
+                }
+            }
             if (favRes.status === 'fulfilled') setIsFavorite(favRes.value.data?.is_favorite || false);
         } catch (err) {
             console.error(err);
@@ -100,6 +110,16 @@ const RecipeDetailPage = () => {
     }
 
     if (!recipe) {
+        if (locked) {
+            return (
+                <div className="empty-state">
+                    <div className="empty-icon">🔒</div>
+                    <h3>Receita bloqueada</h3>
+                    <p>{lockedMessage}</p>
+                    <Link to="/plans" className="btn btn-primary">Ver Planos</Link>
+                </div>
+            );
+        }
         return (
             <div className="empty-state">
                 <div className="empty-icon">🍽️</div>
@@ -193,6 +213,11 @@ const RecipeDetailPage = () => {
                                         #{tag}
                                     </span>
                                 ))}
+                            </div>
+                        )}
+                        {recipe.is_regional_exclusive && (
+                            <div style={{ marginTop: 10 }}>
+                                <span className="recipe-badge region">Exclusiva Regional</span>
                             </div>
                         )}
                     </div>

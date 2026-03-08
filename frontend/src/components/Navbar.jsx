@@ -17,6 +17,7 @@ const baseNavItems = [
     { path: '/history', icon: History, label: 'Historico', minPlan: 'basic' },
     { path: '/meal-plan', icon: CalendarDays, label: 'Plano', minPlan: 'basic' },
     { path: '/nutrition', icon: BarChart3, label: 'Nutricao', minPlan: 'pro' },
+    { path: '/challenges', icon: Shield, label: 'Desafios', minPlan: 'free' },
     { path: '/plans', icon: CreditCard, label: 'Planos', minPlan: 'free' },
 ];
 
@@ -35,7 +36,12 @@ const Navbar = () => {
     };
 
     const navItems = user?.role === 'admin'
-        ? [...baseNavItems, { path: '/admin/users', icon: Shield, label: 'Admin', minPlan: 'free' }]
+        ? [
+            ...baseNavItems,
+            { path: '/admin', icon: Shield, label: 'Admin', minPlan: 'free' },
+            { path: '/admin/users', icon: User, label: 'Utilizadores', minPlan: 'free' },
+            { path: '/admin/recipes', icon: ChefHat, label: 'Receitas', minPlan: 'free' }
+        ]
         : baseNavItems;
 
     const handleLogout = () => {

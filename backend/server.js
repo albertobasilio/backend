@@ -22,23 +22,33 @@ const allowedOrigins = [
     'http://localhost:5173',
     'http://localhost:5174',
     'http://localhost:3000',
+    'https://frontend-three-lovat-41.vercel.app',
     process.env.FRONTEND_URL
 ].filter(Boolean);
 
+const isAllowedOrigin = (origin) => {
+    // Permite requisições sem origin (como mobile apps, curl, Docker Healthcheck wget)
+    if (!origin) return true;
+    
+    // Em desenvolvimento, permite tudo
+    if (!isProduction) return true;
+    
+    // Em produção, verifica a whitelist
+    return allowedOrigins.includes(origin);
+};
+
 app.use(cors({
     origin: (origin, callback) => {
-        // Allow requests with no origin (mobile apps, curl, etc.)
-        if (!origin) return callback(null, true);
-        // In development, allow all origins
-        if (!isProduction) return callback(null, true);
-        // In production, enforce whitelist
-        if (allowedOrigins.includes(origin)) {
-            callback(null, true);
-        } else {
-            callback(new Error('Não permitido pelo CORS.'));
+        if (isAllowedOrigin(origin)) {
+            return callback(null, true);
         }
+        // Registra o erro para facilitar debug se necessário
+        logger.error(`Bloqueado pelo CORS: origin ${origin}`);
+        return callback(new Error('Não permitido pelo CORS.'));
     },
-    credentials: true
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    credentials: true,
+    optionsSuccessStatus: 200
 }));
 
 // Global rate limiter
@@ -86,10 +96,11 @@ app.use('/api/nutrition', require('./routes/nutritionRoutes'));
 app.use('/api/ai', aiLimiter, require('./routes/aiRoutes'));
 app.use('/api/favorites', require('./routes/favoriteRoutes'));
 app.use('/api/admin', require('./routes/adminRoutes'));
+app.use('/api/challenges', require('./routes/challengeRoutes'));
 
 // Health check
 app.get('/api/health', (req, res) => {
-    res.json({ status: 'OK', message: 'Sabor Inteligente MZ API está funcionando! 🇲🇿' });
+    res.json({ status: 'OK', message: 'Sabor Inteligente MZ API está funcionando.' });
 });
 
 // --------------- Error Handling ---------------
@@ -97,7 +108,7 @@ app.use(errorHandler);
 
 // --------------- Start Server ---------------
 app.listen(PORT, '0.0.0.0', () => {
-    logger.info(`🇲🇿 Sabor Inteligente MZ - API Server`);
+    logger.info('Sabor Inteligente MZ - API Server');
     logger.info(`Servidor rodando na porta ${PORT}`);
     logger.info(`http://localhost:${PORT}`);
 });

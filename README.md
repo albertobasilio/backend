@@ -12,6 +12,7 @@ Sistema inteligente de nutrição e receitas moçambicanas com IA.
 - ❤️ **Favoritos** — Guarde as suas receitas preferidas
 - 📤 **Partilha** — Partilhe receitas via WhatsApp
 
+
 ## 🛠️ Tecnologias
 
 | Camada    | Tecnologia              |

@@ -89,9 +89,14 @@ const RecipesPage = () => {
                 </div>
             ) : filtered.length > 0 ? (
                 <div className="card-grid">
-                    {filtered.map((recipe, idx) => (
-                        <Link to={`/recipes/${recipe.id}`} key={recipe.id} style={{ textDecoration: 'none', color: 'inherit' }}>
-                            <div className={`recipe-card ${getDifficultyClass(recipe.difficulty)} animate-fadeInUp stagger-${Math.min(idx + 1, 6)}`}>
+                    {filtered.map((recipe, idx) => {
+                        const CardWrapper = recipe.is_locked ? 'div' : Link;
+                        const wrapperProps = recipe.is_locked
+                            ? { key: recipe.id, style: { textDecoration: 'none', color: 'inherit', cursor: 'not-allowed' } }
+                            : { key: recipe.id, to: `/recipes/${recipe.id}`, style: { textDecoration: 'none', color: 'inherit' } };
+                        return (
+                        <CardWrapper {...wrapperProps}>
+                            <div className={`recipe-card ${getDifficultyClass(recipe.difficulty)} animate-fadeInUp stagger-${Math.min(idx + 1, 6)}`} style={recipe.is_locked ? { opacity: 0.7 } : null}>
                                 {recipe.image_url && (
                                     <div className="recipe-card-image" style={{ width: '100%', height: 160, overflow: 'hidden' }}>
                                         <img
@@ -118,11 +123,17 @@ const RecipesPage = () => {
                                         {recipe.difficulty && (
                                             <span className="recipe-badge difficulty">{getDifficultyLabel(recipe.difficulty)}</span>
                                         )}
+                                        {recipe.is_locked && (
+                                            <span className="recipe-badge difficulty">Bloqueado</span>
+                                        )}
+                                        {recipe.is_regional_exclusive && (
+                                            <span className="recipe-badge region">Exclusiva</span>
+                                        )}
                                     </div>
                                 </div>
                             </div>
-                        </Link>
-                    ))}
+                        </CardWrapper>
+                    );})}
                 </div>
             ) : (
                 <div className="empty-state">

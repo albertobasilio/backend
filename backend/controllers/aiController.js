@@ -4,6 +4,7 @@ const logger = require('../utils/logger');
 const asyncHandler = require('../middleware/asyncHandler');
 const sharp = require('sharp');
 const { PLAN_SCAN_LIMITS } = require('../config/accessLevels');
+const { addSubstitutionsToMissing } = require('../services/substitutionService');
 
 // Compress image to max 800px width, JPEG 60% quality (keeps it under Groq limit)
 const compressImage = async (buffer) => {
@@ -118,6 +119,26 @@ exports.generateRecipes = asyncHandler(async (req, res) => {
     }
 
     const result = await aiService.generateRecipes(ingredients, dietary_profile || {});
+
+    const enrichMissing = async (recipes) => {
+        if (!Array.isArray(recipes)) return [];
+        const enriched = [];
+        for (const recipe of recipes) {
+            if (recipe.missing_ingredients && recipe.missing_ingredients.length > 0) {
+                const missingWithSubs = await addSubstitutionsToMissing(recipe.missing_ingredients);
+                enriched.push({ ...recipe, missing_ingredients: missingWithSubs });
+            } else {
+                enriched.push(recipe);
+            }
+        }
+        return enriched;
+    };
+
+    result.suggested_recipes = await enrichMissing(result.suggested_recipes || result.optional_recipes || []);
+    if (!result.optional_recipes && result.suggested_recipes) {
+        result.optional_recipes = result.suggested_recipes;
+    }
+
     res.json(result);
 });
 

@@ -12,14 +12,4 @@ const pool = mysql.createPool({
   charset: 'utf8mb4'
 });
 
-// Test connection
-pool.getConnection()
-  .then(conn => {
-    console.log('✅ Base de dados MySQL conectada com sucesso!');
-    conn.release();
-  })
-  .catch(err => {
-    console.error('❌ Erro ao conectar à base de dados:', err.message);
-  });
-
 module.exports = pool;
