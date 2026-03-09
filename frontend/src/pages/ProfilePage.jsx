@@ -274,7 +274,7 @@ const ProfilePage = () => {
 
                 <div style={{ textAlign: 'center', opacity: 0.5 }}>
                     <p style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
-                        Desenvolvido por Mr Beto • SI MZ v2.0
+                        Desenvolvido por Mr Beto (basilio.infomidia.co.mz) • SI MZ v2.0
                     </p>
                 </div>
             </div>

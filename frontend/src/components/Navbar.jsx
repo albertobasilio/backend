@@ -162,7 +162,7 @@ const Navbar = () => {
                             whiteSpace: 'nowrap',
                             marginRight: '4px'
                         }}>
-                            By Mr Beto
+                            By Mr Beto (basilio.infomidia.co.mz)
                         </span>
                     </div>
                 </div>

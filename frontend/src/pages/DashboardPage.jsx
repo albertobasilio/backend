@@ -263,7 +263,7 @@ const DashboardPage = () => {
             {/* Footer Signature */}
             <div style={{ marginTop: 60, textAlign: 'center', opacity: 0.3 }}>
                 <p style={{ fontSize: '10px', color: 'var(--text-muted)' }}>
-                    Sabor Inteligente MZ • Desenvolvido por Mr Beto
+                    Sabor Inteligente MZ • Desenvolvido por Mr Beto (basilio.infomidia.co.mz)
                 </p>
             </div>
         </div>

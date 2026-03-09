@@ -166,7 +166,7 @@ const PlansPage = () => {
                 <div style={{ marginTop: 40, textAlign: 'center', padding: '20px', background: 'rgba(255,255,255,0.02)', borderRadius: '16px' }}>
                     <p style={{ color: 'var(--text-secondary)', fontSize: '0.8rem', lineHeight: 1.5 }}>
                         Todos os planos incluem suporte técnico e atualizações de IA. <br/>
-                        <b>Desenvolvido por Mr Beto</b>
+                        <b>Desenvolvido por Mr Beto (basilio.infomidia.co.mz)</b>
                     </p>
                 </div>
             </div>
