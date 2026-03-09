@@ -154,7 +154,10 @@ const LoginPage = () => {
                         </div>
 
                         <div className="auth-footer">
-                            Nao tem conta? <Link to="/register">Criar conta gratis</Link>
+                            <p>Não tem conta? <Link to="/register">Criar conta grátis</Link></p>
+                            <p style={{ marginTop: '24px', fontSize: '11px', opacity: 0.5 }}>
+                                Desenvolvido por Mr Beto
+                            </p>
                         </div>
                     </>
                 ) : (

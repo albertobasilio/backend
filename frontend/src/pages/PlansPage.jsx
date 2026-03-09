@@ -2,7 +2,7 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { FaCheck, FaWhatsapp, FaRobot, FaCamera, FaStar } from 'react-icons/fa';
+import { FaCheck, FaWhatsapp, FaRobot, FaCamera, FaStar, FaArrowLeft, FaGem, FaCrown } from 'react-icons/fa';
 
 const PlansPage = () => {
     const navigate = useNavigate();
@@ -11,222 +11,164 @@ const PlansPage = () => {
     const plans = [
         {
             id: 'free',
-            name: 'Teste Gratis',
+            name: 'Gratuito',
             price: '0 MT',
             scans: 1,
-            accessLevel: 'Nivel Inicial',
-            headline: 'Entrada para testar o sistema com recursos limitados',
-            features: [
-                '1 scan por dia para testar a experiencia',
-                'Modo "o que tenho em casa" com lista manual',
-                'Nao inclui historico de scans, favoritos e plano semanal',
-                'Nao inclui nutricao nem lista de compras'
-            ],
-            color: 'rgba(255, 255, 255, 0.05)',
+            accessLevel: 'Essencial',
+            features: ['1 scan/dia', 'Deteção básica', 'Receitas rápidas'],
+            color: 'rgba(255, 255, 255, 0.03)',
             iconColor: 'var(--text-secondary)',
             buttonClass: 'btn-secondary',
-            icon: <FaCamera size={24} />
+            icon: <FaCamera size={18} />
         },
         {
             id: 'basic',
-            name: 'Basico',
+            name: 'Básico',
             price: '55 MT',
-            period: '/mes',
+            period: '/mês',
             scans: 5,
-            accessLevel: 'Nivel Pago 1',
-            headline: 'Para quem usa com frequencia e quer organizar a rotina',
-            features: [
-                '5 scans por dia para manter constancia',
-                'Historico de scans e favoritos para nao perder ideias',
-                'Inclui plano semanal, mas ainda sem nutricao e lista de compras',
-                'Desafios semanais para manter consistencia'
-            ],
-            color: 'rgba(52, 211, 153, 0.1)',
+            accessLevel: 'Organizador',
+            features: ['5 scans/dia', 'Histórico completo', 'Plano semanal'],
+            color: 'rgba(52, 211, 153, 0.05)',
             iconColor: 'var(--color-primary)',
             buttonClass: 'btn-primary',
-            isPopular: false,
-            icon: <FaRobot size={24} />
+            icon: <FaRobot size={18} />
         },
         {
             id: 'pro',
             name: 'Pro',
             price: '199 MT',
-            period: '/mes',
-            scans: 8,
-            accessLevel: 'Nivel Pago 2',
-            headline: 'Plano completo para decisao inteligente no dia a dia',
-            features: [
-                '8 scans por dia para rotina intensa',
-                'Tudo do Basico sem as limitacoes de nutricao e compras',
-                'Nutricao detalhada e lista de compras inteligente por refeicao',
-                'Receitas regionais exclusivas (selecionadas)'
-            ],
-            color: 'rgba(59, 130, 246, 0.15)',
+            period: '/mês',
+            scans: 10,
+            accessLevel: 'Inteligente',
+            features: ['10 scans/dia', 'Nutrição detalhada', 'Lista automática'],
+            color: 'rgba(59, 130, 246, 0.08)',
             iconColor: '#60a5fa',
             buttonClass: 'btn-primary',
             isPopular: true,
-            icon: <FaStar size={24} />
+            icon: <FaGem size={18} />
         },
         {
             id: 'premium',
             name: 'Premium',
             price: '500 MT',
-            period: '/mes',
+            period: '/mês',
             scans: 20,
-            accessLevel: 'Nivel Pago 3',
-            headline: 'Maximo desempenho para familias e uso profissional',
-            features: [
-                '20 scans por dia para liberdade total',
-                'Tudo do Pro com folga para uso intensivo',
-                'Receitas regionais exclusivas e conteudos premium',
-                'Prioridade maxima no suporte e acesso antecipado a novidades'
-            ],
-            color: 'rgba(168, 85, 247, 0.15)',
+            accessLevel: 'Master Chef',
+            features: ['20 scans/dia', 'Suporte Prioritário', 'Dicas exclusivas'],
+            color: 'rgba(168, 85, 247, 0.08)',
             iconColor: '#a78bfa',
             buttonClass: 'btn-primary',
-            isPopular: false,
-            icon: <FaStar size={24} color="#fcd34d" />
+            icon: <FaCrown size={18} />
         }
     ];
 
     const handleSubscribe = (plan) => {
         if (plan.id === 'free') {
-            if (user) {
-                navigate('/');
-            } else {
-                navigate('/register');
-            }
+            if (user) navigate('/');
+            else navigate('/register');
             return;
         }
-
-        const message = `Ola, gostaria de subscrever ao plano ${plan.name} do Sabor Inteligente por ${plan.price}.`;
+        const message = `Olá! Quero ativar o plano *${plan.name}* (Valor: ${plan.price}).`;
         const url = `https://wa.me/258848546384?text=${encodeURIComponent(message)}`;
         window.open(url, '_blank');
     };
 
     return (
-        <div className="page-enter">
-            <div style={{ maxWidth: 1200, margin: '0 auto' }}>
-                <div style={{ textAlign: 'center', marginBottom: 40, paddingTop: 20 }}>
-                    <div style={{ display: 'flex', justifyContent: 'flex-start', marginBottom: 12 }}>
-                        <button className="btn btn-secondary btn-sm" onClick={() => navigate(-1)}>
-                            Voltar
-                        </button>
+        <div className="page-enter" style={{ paddingBottom: 60 }}>
+            <div style={{ maxWidth: 800, margin: '0 auto', padding: '0 16px' }}>
+                
+                <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 32, paddingTop: 10 }}>
+                    <button 
+                        onClick={() => navigate(-1)}
+                        className="btn btn-secondary btn-sm"
+                        style={{ borderRadius: '12px', width: 40, height: 40, padding: 0 }}
+                    >
+                        <FaArrowLeft size={14} />
+                    </button>
+                    <div>
+                        <h1 style={{ fontSize: '1.5rem', fontWeight: 800, color: 'white' }}>Planos SI</h1>
+                        <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}>Escolha a sua experiência</p>
                     </div>
-                    <motion.h1
-                        initial={{ opacity: 0, y: -20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        style={{ fontSize: '2.5rem', fontWeight: 800, color: 'white', marginBottom: 16 }}
-                    >
-                        Escolha o seu plano
-                    </motion.h1>
-                    <motion.p
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        transition={{ delay: 0.2 }}
-                        style={{ color: 'var(--text-secondary)', fontSize: '1.1rem', maxWidth: 720, margin: '0 auto' }}
-                    >
-                        Escolha o plano ideal para sua rotina e desbloqueie mais scans, recursos e produtividade na cozinha.
-                    </motion.p>
                 </div>
 
-                <div style={{
-                    display: 'grid',
-                    gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
-                    gap: 20,
-                    paddingBottom: 40
-                }}>
+                <div className="plans-container" style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                     {plans.map((plan, index) => (
                         <motion.div
                             key={plan.id}
-                            initial={{ opacity: 0, scale: 0.9 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                            transition={{ delay: index * 0.1 }}
-                            className="card"
+                            initial={{ opacity: 0, x: -20 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            transition={{ delay: index * 0.05 }}
                             style={{
-                                display: 'flex',
-                                flexDirection: 'column',
-                                position: 'relative',
-                                border: plan.isPopular ? '2px solid var(--color-primary)' : '1px solid var(--border)',
-                                transform: plan.isPopular ? 'scale(1.05)' : 'none',
-                                zIndex: plan.isPopular ? 10 : 1,
                                 background: plan.color,
-                                padding: 0,
+                                border: plan.isPopular ? '1px solid var(--color-primary)' : '1px solid var(--border)',
+                                borderRadius: '16px',
+                                padding: '16px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'space-between',
+                                gap: 12,
+                                position: 'relative',
                                 overflow: 'hidden'
                             }}
                         >
                             {plan.isPopular && (
                                 <div style={{
-                                    background: 'var(--color-primary)',
-                                    color: '#064e3b',
-                                    fontSize: '.75rem',
-                                    fontWeight: 700,
-                                    padding: '4px 12px',
                                     position: 'absolute',
                                     top: 0,
                                     right: 0,
-                                    borderBottomLeftRadius: 10,
+                                    background: 'var(--color-primary)',
+                                    color: '#064e3b',
+                                    padding: '2px 10px',
+                                    fontSize: '0.65rem',
+                                    fontWeight: 900,
+                                    borderBottomLeftRadius: '10px',
                                     textTransform: 'uppercase'
                                 }}>
-                                    Mais Popular
+                                    Popular
                                 </div>
                             )}
 
-                            <div style={{ padding: 24, paddingBottom: 0 }}>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-                                    <h3 style={{ fontSize: '1.4rem', fontWeight: 700, color: 'white' }}>{plan.name}</h3>
-                                    <div style={{
-                                        padding: 10,
-                                        borderRadius: '50%',
-                                        background: 'rgba(255,255,255,0.1)',
-                                        color: plan.iconColor,
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'center'
-                                    }}>
-                                        {plan.icon}
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 12, flex: 1 }}>
+                                <div style={{ 
+                                    width: 40, height: 40, borderRadius: '12px', 
+                                    background: 'rgba(255,255,255,0.05)', color: plan.iconColor,
+                                    display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0
+                                }}>
+                                    {plan.icon}
+                                </div>
+                                <div>
+                                    <h3 style={{ fontSize: '1rem', fontWeight: 700, color: 'white', margin: 0 }}>{plan.name}</h3>
+                                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginTop: '4px' }}>
+                                        {plan.features.map((f, i) => (
+                                            <span key={i} style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: 3 }}>
+                                                <FaCheck size={8} color="var(--color-primary)" /> {f}
+                                            </span>
+                                        ))}
                                     </div>
                                 </div>
-                                <div style={{ display: 'flex', alignItems: 'baseline', marginBottom: 8 }}>
-                                    <span style={{ fontSize: '2rem', fontWeight: 800, color: 'white' }}>{plan.price}</span>
-                                    {plan.period && <span style={{ marginLeft: 4, fontSize: '1rem', color: 'var(--text-secondary)' }}>{plan.period}</span>}
-                                </div>
-                                <p style={{ fontSize: '.9rem', color: 'var(--text-secondary)', marginBottom: 8 }}>
-                                    {plan.scans} {plan.scans === 1 ? 'scan por dia' : 'scans por dia'}
-                                </p>
-                                <p style={{ fontSize: '.8rem', color: 'var(--color-primary-light)', marginBottom: 20 }}>
-                                    {plan.accessLevel}
-                                </p>
-                                <p style={{ fontSize: '.85rem', color: 'var(--text-main)', marginBottom: 20, lineHeight: 1.5 }}>
-                                    {plan.headline}
-                                </p>
                             </div>
 
-                            <div style={{ flex: 1, padding: 24, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
-                                <ul style={{ listStyle: 'none', marginBottom: 32 }}>
-                                    {plan.features.map((feature, featureIndex) => (
-                                        <li key={featureIndex} style={{ display: 'flex', alignItems: 'flex-start', marginBottom: 16, fontSize: '.9rem', color: 'var(--text-main)' }}>
-                                            <div style={{ flexShrink: 0, marginRight: 12, marginTop: 2, color: 'var(--color-primary)' }}>
-                                                <FaCheck size={14} />
-                                            </div>
-                                            {feature}
-                                        </li>
-                                    ))}
-                                </ul>
-
+                            <div style={{ textAlign: 'right', minWidth: '90px' }}>
+                                <div style={{ fontSize: '1.1rem', fontWeight: 800, color: 'white' }}>{plan.price}</div>
                                 <button
                                     onClick={() => handleSubscribe(plan)}
-                                    className={`btn ${plan.buttonClass} btn-block-mobile`}
-                                    style={{ width: '100%', justifyContent: 'center' }}
+                                    className={`btn ${plan.buttonClass} btn-sm`}
+                                    style={{ marginTop: '8px', width: '100%', fontSize: '0.75rem', height: '32px' }}
                                 >
-                                    {plan.id === 'free' ? <FaCamera size={18} /> : <FaWhatsapp size={18} />}
-                                    {plan.id === 'free' ? 'Comecar Gratis' : 'Subscrever Agora'}
+                                    {plan.id === 'free' ? 'Ativar' : 'Assinar'}
                                 </button>
                             </div>
                         </motion.div>
                     ))}
                 </div>
 
+                <div style={{ marginTop: 40, textAlign: 'center', padding: '20px', background: 'rgba(255,255,255,0.02)', borderRadius: '16px' }}>
+                    <p style={{ color: 'var(--text-secondary)', fontSize: '0.8rem', lineHeight: 1.5 }}>
+                        Todos os planos incluem suporte técnico e atualizações de IA. <br/>
+                        <b>Desenvolvido por Mr Beto</b>
+                    </p>
+                </div>
             </div>
         </div>
     );

@@ -151,9 +151,20 @@ const Navbar = () => {
                             <span className="user-plan">{getPlanName(user?.plan)}</span>
                         </div>
                     </div>
-                    <button className="btn-logout" onClick={handleLogout} title="Sair">
-                        <LogOut size={18} />
-                    </button>
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '8px' }}>
+                        <button className="btn-logout" onClick={handleLogout} title="Sair">
+                            <LogOut size={18} />
+                        </button>
+                        <span style={{ 
+                            fontSize: '10px', 
+                            color: 'var(--text-muted)', 
+                            opacity: 0.6,
+                            whiteSpace: 'nowrap',
+                            marginRight: '4px'
+                        }}>
+                            By Mr Beto
+                        </span>
+                    </div>
                 </div>
             </nav>
 

@@ -1,6 +1,7 @@
 import axios from 'axios';
 
-const API_URL = 'http://102.211.186.44:5000/api';
+// Detecta se estamos rodando localmente ou se a URL da API foi fornecida
+const API_URL = import.meta.env.VITE_API_URL || 'https://sabor-api-mz.duckdns.org/api';
 
 const api = axios.create({
     baseURL: API_URL,
