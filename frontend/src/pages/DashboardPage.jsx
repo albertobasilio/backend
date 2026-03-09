@@ -17,7 +17,7 @@ const SkeletonCard = () => (
 );
 
 const quickActions = [
-    { path: '/scan', icon: ScanLine, label: 'Escanear', desc: 'Identificar ingredientes', variant: 'scan' },
+    { path: '/scan', icon: ScanLine, label: 'Escanear', desc: 'Identificar produtos', variant: 'scan' },
     { path: '/recipes', icon: ChefHat, label: 'Receitas', desc: 'Sabor de Moçambique', variant: 'recipe' },
     { path: '/favorites', icon: Heart, label: 'Favoritos', desc: 'Seus pratos salvos', variant: 'favorites' },
     { path: '/history', icon: History, label: 'Histórico', desc: 'Scans realizados', variant: 'history' },
