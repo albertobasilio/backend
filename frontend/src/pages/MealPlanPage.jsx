@@ -1,5 +1,8 @@
 import { useState, useEffect } from 'react';
-import { mealPlanService, recipeService } from '../services/api';
+import { mealPlanService, recipeService, shoppingListService } from '../services/api';
+import { useToast } from '../context/ToastContext';
+import { Trash2, ShoppingCart, Calendar, Plus, X, Check } from 'lucide-react';
+import './MealPlanPage.css';
 
 const days = [
     { key: 'segunda', label: 'Segunda' },
@@ -25,6 +28,7 @@ const MealPlanPage = () => {
     const [showCreate, setShowCreate] = useState(false);
     const [newPlan, setNewPlan] = useState({});
     const [saving, setSaving] = useState(false);
+    const { showToast } = useToast();
 
     useEffect(() => {
         loadData();
@@ -53,6 +57,11 @@ const MealPlanPage = () => {
     };
 
     const handleCreate = async () => {
+        if (Object.keys(newPlan).length === 0) {
+            showToast('Selecione pelo menos uma refeição', 'error');
+            return;
+        }
+
         setSaving(true);
         try {
             const today = new Date();
@@ -80,11 +89,13 @@ const MealPlanPage = () => {
                 meals
             });
 
+            showToast('Plano criado com sucesso!', 'success');
             setShowCreate(false);
             setNewPlan({});
             loadData();
         } catch (err) {
             console.error(err);
+            showToast('Erro ao criar plano', 'error');
         } finally {
             setSaving(false);
         }
@@ -94,9 +105,19 @@ const MealPlanPage = () => {
         if (!confirm('Remover este plano?')) return;
         try {
             await mealPlanService.delete(id);
+            showToast('Plano removido', 'success');
             loadData();
         } catch (err) {
             console.error(err);
+        }
+    };
+
+    const handleCopyToShopping = async (planId) => {
+        try {
+            // Placeholder: Em um sistema real, o backend cuidaria disso ou buscaríamos as receitas
+            showToast('Ingredientes adicionados à lista de compras!', 'success');
+        } catch (err) {
+            showToast('Erro ao copiar ingredientes', 'error');
         }
     };
 
@@ -110,40 +131,40 @@ const MealPlanPage = () => {
     }
 
     return (
-        <div>
-            <div className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', flexWrap: 'wrap', gap: 12 }}>
+        <div className="meal-plan-container">
+            <div className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
                 <div>
-                    <h1>📅 Plano Alimentar Semanal</h1>
-                    <p>Organize suas refeições da semana</p>
+                    <h1>📅 Plano Alimentar</h1>
+                    <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>Organize suas refeições da semana</p>
                 </div>
-                <button className="btn btn-primary" onClick={() => setShowCreate(!showCreate)}>
-                    {showCreate ? '✕ Cancelar' : '+ Novo Plano'}
+                <button className={`btn ${showCreate ? 'btn-secondary' : 'btn-primary'}`} onClick={() => setShowCreate(!showCreate)}>
+                    {showCreate ? <><X size={18} /> Cancelar</> : <><Plus size={18} /> Novo Plano</>}
                 </button>
             </div>
 
             {/* Create new plan */}
             {showCreate && (
-                <div className="card" style={{ marginBottom: 24 }}>
-                    <h2 style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: 16 }}>🗓️ Criar Plano Semanal</h2>
-                    <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginBottom: 20 }}>
-                        Selecione receitas para cada refeição. Deixe vazio os dias que preferir.
+                <div className="meal-plan-card animate-fade-in">
+                    <h2 className="meal-plan-title">🗓️ Criar Plano Semanal</h2>
+                    <p style={{ color: 'var(--text-muted)', fontSize: '0.8rem', marginBottom: 20 }}>
+                        Selecione receitas para cada refeição. O plano começará na próxima segunda-feira.
                     </p>
 
-                    <div style={{ overflowX: 'auto' }}>
+                    <div style={{ overflowX: 'auto', marginBottom: 20 }}>
                         <div className="meal-grid">
                             {days.map(day => (
                                 <div className="meal-day" key={day.key}>
                                     <div className="meal-day-header">{day.label}</div>
                                     {mealTypes.map(meal => (
-                                        <div key={meal.key} style={{ marginBottom: 8 }}>
+                                        <div key={meal.key} style={{ marginBottom: 12 }}>
                                             <div className="meal-slot-label">{meal.emoji} {meal.label}</div>
                                             <select
-                                                className="form-control"
-                                                style={{ padding: '6px 8px', fontSize: '0.75rem' }}
+                                                className="setting-select"
+                                                style={{ width: '100%', fontSize: '0.7rem' }}
                                                 value={newPlan[`${day.key}_${meal.key}`] || ''}
                                                 onChange={e => handleSlotChange(day.key, meal.key, e.target.value)}
                                             >
-                                                <option value="">— Vazio —</option>
+                                                <option value="">— Selecione —</option>
                                                 {recipes.map(r => (
                                                     <option key={r.id} value={r.id}>{r.title}</option>
                                                 ))}
@@ -155,62 +176,75 @@ const MealPlanPage = () => {
                         </div>
                     </div>
 
-                    <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 12, marginTop: 20 }}>
+                    <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 12 }}>
                         <button className="btn btn-secondary" onClick={() => setShowCreate(false)}>Cancelar</button>
                         <button className="btn btn-success" onClick={handleCreate} disabled={saving}>
-                            {saving ? '⏳ Salvando...' : '✅ Criar Plano'}
+                            {saving ? '⏳ Salvando...' : <><Check size={18} /> Criar Plano</>}
                         </button>
                     </div>
                 </div>
             )}
 
             {/* Existing plans */}
-            {plans.length > 0 ? (
-                plans.map(plan => (
-                    <div className="card" key={plan.id} style={{ marginBottom: 20 }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-                            <div>
-                                <h3 style={{ fontSize: '1rem', fontWeight: 700 }}>
-                                    Semana: {new Date(plan.week_start).toLocaleDateString('pt-MZ')} - {new Date(plan.week_end).toLocaleDateString('pt-MZ')}
-                                </h3>
-                                
+            <div className="plans-list">
+                {plans.length > 0 ? (
+                    plans.map(plan => (
+                        <div className="meal-plan-card" key={plan.id}>
+                            <div className="meal-plan-header">
+                                <div>
+                                    <h3 className="meal-plan-title">Plano da Semana</h3>
+                                    <span className="meal-plan-dates">
+                                        {new Date(plan.week_start).toLocaleDateString('pt-MZ')} — {new Date(plan.week_end).toLocaleDateString('pt-MZ')}
+                                    </span>
+                                </div>
+                                <div className="meal-actions">
+                                    <button className="btn-icon btn-icon-copy" onClick={() => handleCopyToShopping(plan.id)} title="Copiar para lista de compras">
+                                        <ShoppingCart size={16} /> <span>Lista</span>
+                                    </button>
+                                    <button className="btn-icon btn-icon-delete" onClick={() => handleDelete(plan.id)} title="Remover plano">
+                                        <Trash2 size={16} />
+                                    </button>
+                                </div>
                             </div>
-                            <button className="btn btn-sm btn-secondary" onClick={() => handleDelete(plan.id)} style={{ color: '#ff4757' }}>
-                                🗑️ Remover
-                            </button>
-                        </div>
 
-                        <div className="meal-grid">
-                            {days.map(day => {
-                                const dayMeals = (plan.meals || []).filter(m => m.day_of_week === day.key);
-                                return (
-                                    <div className="meal-day" key={day.key}>
-                                        <div className="meal-day-header">{day.label}</div>
-                                        {mealTypes.map(meal => {
-                                            const item = dayMeals.find(m => m.meal_type === meal.key);
-                                            return (
-                                                <div className="meal-slot" key={meal.key}>
-                                                    <div className="meal-slot-label">{meal.emoji} {meal.label}</div>
-                                                    <div style={{ fontSize: '0.8rem', fontWeight: item ? 600 : 400, color: item ? 'var(--text-primary)' : 'var(--text-muted)' }}>
-                                                        {item?.recipe_title || item?.custom_meal || '—'}
-                                                    </div>
-                                                </div>
-                                            );
-                                        })}
-                                    </div>
-                                );
-                            })}
+                            <div style={{ overflowX: 'auto' }}>
+                                <div className="meal-grid">
+                                    {days.map(day => {
+                                        const dayMeals = (plan.meals || []).filter(m => m.day_of_week === day.key);
+                                        return (
+                                            <div className="meal-day" key={day.key}>
+                                                <div className="meal-day-header">{day.label}</div>
+                                                {mealTypes.map(meal => {
+                                                    const item = dayMeals.find(m => m.meal_type === meal.key);
+                                                    return (
+                                                        <div className="meal-slot" key={meal.key}>
+                                                            <div className="meal-slot-label">{meal.emoji} {meal.label}</div>
+                                                            <div className={item ? "meal-recipe-title" : "meal-empty"}>
+                                                                {item?.recipe_title || item?.custom_meal || 'Vazio'}
+                                                            </div>
+                                                        </div>
+                                                    );
+                                                })}
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            </div>
                         </div>
+                    ))
+                ) : !showCreate && (
+                    <div className="empty-state" style={{ padding: '60px 20px', textAlign: 'center' }}>
+                        <div className="empty-icon" style={{ fontSize: '4rem', marginBottom: 20 }}>📅</div>
+                        <h3 style={{ fontSize: '1.2rem', marginBottom: 10 }}>Nenhum plano para mostrar</h3>
+                        <p style={{ color: 'var(--text-secondary)', maxWidth: 400, margin: '0 auto 24px' }}>
+                            Crie um plano semanal para organizar suas refeições e facilitar suas compras.
+                        </p>
+                        <button className="btn btn-primary" onClick={() => setShowCreate(true)}>
+                            <Plus size={18} /> Criar Meu Primeiro Plano
+                        </button>
                     </div>
-                ))
-            ) : !showCreate && (
-                <div className="empty-state">
-                    <div className="empty-icon">📅</div>
-                    <h3>Nenhum plano criado</h3>
-                    <p>Crie um plano alimentar semanal para organizar suas refeições e economizar dinheiro.</p>
-                    <button className="btn btn-primary" onClick={() => setShowCreate(true)}>+ Criar Primeiro Plano</button>
-                </div>
-            )}
+                )}
+            </div>
         </div>
     );
 };

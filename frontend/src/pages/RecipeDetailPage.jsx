@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { recipeService, favoriteService, aiService } from '../services/api';
+import { recipeService, favoriteService, aiService, feedbackService } from '../services/api';
 import { useToast } from '../context/ToastContext';
+import { Star, MessageSquare, Send, Clock, Users, MapPin, Share2, Heart, ChevronLeft } from 'lucide-react';
 
 const RecipeDetailPage = () => {
     const { id } = useParams();
@@ -12,10 +13,20 @@ const RecipeDetailPage = () => {
     const [enriching, setEnriching] = useState(false);
     const [locked, setLocked] = useState(false);
     const [lockedMessage, setLockedMessage] = useState('');
+    
+    // Reviews state
+    const [reviews, setReviews] = useState([]);
+    const [stats, setStats] = useState({ average: 0, total: 0 });
+    const [myRating, setMyRating] = useState(0);
+    const [hoverRating, setHoverRating] = useState(0);
+    const [myComment, setMyComment] = useState('');
+    const [submittingReview, setSubmittingReview] = useState(false);
+
     const toast = useToast();
 
     useEffect(() => {
         loadRecipe();
+        loadReviews();
     }, [id]);
 
     const loadRecipe = async () => {
@@ -38,6 +49,37 @@ const RecipeDetailPage = () => {
             console.error(err);
         } finally {
             setLoading(false);
+        }
+    };
+
+    const loadReviews = async () => {
+        try {
+            const res = await feedbackService.getRecipeReviews(id);
+            setReviews(res.data.reviews || []);
+            setStats(res.data.stats || { average: 0, total: 0 });
+        } catch (err) {
+            console.error('Error loading reviews:', err);
+        }
+    };
+
+    const handleRatingSubmit = async (e) => {
+        e.preventDefault();
+        if (myRating === 0) return toast.error('Selecione uma classificação');
+        setSubmittingReview(true);
+        try {
+            await feedbackService.submitRecipeReview({
+                recipe_id: id,
+                rating: myRating,
+                comment: myComment
+            });
+            toast.success('Avaliação enviada! Obrigado.');
+            setMyComment('');
+            setMyRating(0);
+            loadReviews();
+        } catch (err) {
+            toast.error(err.response?.data?.message || 'Erro ao enviar avaliação');
+        } finally {
+            setSubmittingReview(false);
         }
     };
 
@@ -100,6 +142,22 @@ const RecipeDetailPage = () => {
         }
     };
 
+    const getRecipeImage = (recipe) => {
+        if (recipe?.image_url && recipe.image_url.startsWith('http')) return recipe.image_url;
+        
+        const foodImages = [
+            'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=500&q=80',
+            'https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=500&q=80',
+            'https://images.unsplash.com/photo-1473093226795-af9932fe5856?w=500&q=80',
+            'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=500&q=80',
+            'https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=500&q=80',
+            'https://images.unsplash.com/photo-1482049016688-2d3e1b311543?w=500&q=80',
+        ];
+        
+        const index = parseInt(id) || 0;
+        return foodImages[index % foodImages.length];
+    };
+
     if (loading) {
         return (
             <div className="spinner-container">
@@ -135,7 +193,7 @@ const RecipeDetailPage = () => {
         <div className="page-enter">
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
                 <Link to="/recipes" style={{ color: 'var(--text-secondary)', textDecoration: 'none', fontSize: '0.85rem', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-                    ← Voltar às receitas
+                    <ChevronLeft size={16} /> Voltar às receitas
                 </Link>
                 <div style={{ display: 'flex', gap: 8 }}>
                     <button
@@ -144,13 +202,10 @@ const RecipeDetailPage = () => {
                         disabled={favLoading}
                         title={isFavorite ? 'Remover dos favoritos' : 'Adicionar aos favoritos'}
                     >
-                        {isFavorite ? '❤️' : '🤍'}
+                        <Heart size={20} fill={isFavorite ? 'currentColor' : 'none'} />
                     </button>
-                    <button className="share-btn whatsapp" onClick={shareWhatsApp} title="Partilhar no WhatsApp">
-                        📱
-                    </button>
-                    <button className="share-btn" onClick={copyLink} title="Copiar link">
-                        🔗
+                    <button className="share-btn" onClick={shareWhatsApp} title="Partilhar no WhatsApp">
+                        <Share2 size={18} />
                     </button>
                 </div>
             </div>
@@ -160,41 +215,55 @@ const RecipeDetailPage = () => {
                 <div style={{ display: 'flex', gap: 24, flexWrap: 'wrap' }}>
                     <div style={{
                         width: 200, height: 200, borderRadius: 'var(--radius-lg)',
-                        background: 'linear-gradient(135deg, var(--color-primary), var(--color-accent))',
-                        display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '5rem',
-                        flexShrink: 0, overflow: 'hidden'
+                        background: '#1a1a1a',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        flexShrink: 0, overflow: 'hidden', position: 'relative'
                     }}>
-                        {recipe.image_url ? (
-                            <img
-                                src={recipe.image_url}
-                                alt={recipe.title}
-                                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                                onError={(e) => { e.target.style.display = 'none'; e.target.parentElement.innerHTML = '🍛'; }}
-                            />
-                        ) : '🍛'}
+                        <img
+                            src={getRecipeImage(recipe)}
+                            alt={recipe.title}
+                            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                            onError={(e) => { 
+                                e.target.src = 'https://images.unsplash.com/photo-1495195129352-aec325a55b65?w=500&q=80'; 
+                            }}
+                        />
                     </div>
 
                     <div style={{ flex: 1, minWidth: 250 }}>
-                        <h1 style={{ fontSize: '1.6rem', fontWeight: 800, marginBottom: 8 }}>{recipe.title}</h1>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                            <div>
+                                <h1 style={{ fontSize: '1.6rem', fontWeight: 800, marginBottom: 4 }}>{recipe.title}</h1>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+                                    <div style={{ display: 'flex', color: 'var(--color-accent)' }}>
+                                        {[1, 2, 3, 4, 5].map(s => (
+                                            <Star key={s} size={14} fill={s <= Math.round(stats.average) ? 'currentColor' : 'none'} />
+                                        ))}
+                                    </div>
+                                    <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', fontWeight: 600 }}>
+                                        {stats.average.toFixed(1)} ({stats.total} avaliações)
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
                         <p style={{ color: 'var(--text-secondary)', marginBottom: 16, lineHeight: 1.5 }}>{recipe.description}</p>
 
                         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 16, marginBottom: 16 }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.9rem' }}>
-                                <span>⏱</span>
+                                <Clock size={16} className="text-primary" />
                                 <div>
                                     <div style={{ fontWeight: 600 }}>{(recipe.prep_time_min || 0) + (recipe.cook_time_min || 0)} min</div>
                                     <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Tempo total</div>
                                 </div>
                             </div>
                             <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.9rem' }}>
-                                <span>👥</span>
+                                <Users size={16} className="text-primary" />
                                 <div>
                                     <div style={{ fontWeight: 600 }}>{recipe.servings} porções</div>
                                     <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Rendimento</div>
                                 </div>
                             </div>
                             <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.9rem' }}>
-                                <span>📍</span>
+                                <MapPin size={16} className="text-primary" />
                                 <div>
                                     <div style={{ fontWeight: 600 }}>{recipe.region || 'Nacional'}</div>
                                     <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Região</div>
@@ -206,7 +275,7 @@ const RecipeDetailPage = () => {
                             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
                                 {tags.map((tag, i) => (
                                     <span key={i} style={{
-                                        padding: '4px 12px', background: 'rgba(232, 98, 28, 0.1)',
+                                        padding: '4px 12px', background: 'rgba(52, 211, 153, 0.1)',
                                         color: 'var(--color-primary-light)', borderRadius: 'var(--radius-xl)',
                                         fontSize: '0.75rem', fontWeight: 600
                                     }}>
@@ -215,75 +284,60 @@ const RecipeDetailPage = () => {
                                 ))}
                             </div>
                         )}
-                        {recipe.is_regional_exclusive && (
-                            <div style={{ marginTop: 10 }}>
-                                <span className="recipe-badge region">Exclusiva Regional</span>
-                            </div>
-                        )}
                     </div>
                 </div>
             </div>
 
             <div className="recipe-detail-grid">
                 {/* Left: Ingredients */}
-                <div>
-                    <div className="card">
-                        <h2 style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: 16 }}>🥘 Produtos Necessários</h2>
-                        {(recipe.ingredients || []).length > 0 ? (
-                            <ul style={{ listStyle: 'none', padding: 0 }}>
-                                {recipe.ingredients.map((ing, i) => (
-                                    <li key={i} style={{
-                                        display: 'flex', alignItems: 'center', gap: 10, padding: '8px 0',
-                                        borderBottom: '1px solid var(--border-color)'
-                                    }}>
-                                        <span>{ing.emoji || '🥄'}</span>
-                                        <span style={{ flex: 1 }}>{ing.ingredient_name || ing.name}</span>
-                                        <span style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>
-                                            {ing.quantity} {ing.unit}
-                                        </span>
-                                        {ing.is_optional && (
-                                            <span style={{ fontSize: '0.7rem', color: 'var(--color-accent)', background: 'rgba(245,166,35,0.1)', padding: '2px 6px', borderRadius: 4 }}>
-                                                opcional
-                                            </span>
-                                        )}
-                                    </li>
-                                ))}
-                            </ul>
-                        ) : (
-                            <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>
-                                Produtos não detalhados para esta receita.
-                            </p>
-                        )}
-                    </div>
+                <div className="card">
+                    <h2 style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: 16, display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <MessageSquare size={18} className="text-primary" /> Produtos Necessários
+                    </h2>
+                    {(recipe.ingredients || []).length > 0 ? (
+                        <ul style={{ listStyle: 'none', padding: 0 }}>
+                            {recipe.ingredients.map((ing, i) => (
+                                <li key={i} style={{
+                                    display: 'flex', alignItems: 'center', gap: 10, padding: '8px 0',
+                                    borderBottom: '1px solid var(--border)'
+                                }}>
+                                    <span style={{ fontSize: '1.1rem' }}>{ing.emoji || '🥘'}</span>
+                                    <span style={{ flex: 1, fontSize: '0.9rem' }}>{ing.ingredient_name || ing.name}</span>
+                                    <span style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>
+                                        {ing.quantity} {ing.unit}
+                                    </span>
+                                </li>
+                            ))}
+                        </ul>
+                    ) : (
+                        <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>Produtos não detalhados.</p>
+                    )}
                 </div>
 
                 {/* Right: Nutrition */}
-                <div>
-                    <div className="card">
-                        <h2 style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: 16 }}>📊 Informação Nutricional</h2>
-                        <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: 12 }}>Por porção</p>
-                        {[
-                            { label: 'Calorias', value: recipe.calories, unit: 'kcal', max: 600, color: '#E8621C' },
-                            { label: 'Proteínas', value: recipe.protein, unit: 'g', max: 50, color: '#1B8C4E' },
-                            { label: 'Carboidratos', value: recipe.carbs, unit: 'g', max: 80, color: '#F5A623' },
-                            { label: 'Gordura', value: recipe.fat, unit: 'g', max: 40, color: '#0A6E8A' },
-                            { label: 'Fibra', value: recipe.fiber, unit: 'g', max: 20, color: '#8B5CF6' },
-                            { label: 'Ferro', value: recipe.iron, unit: 'mg', max: 10, color: '#EC4899' },
-                        ].map(n => (
-                            <div key={n.label} style={{ marginBottom: 10 }}>
-                                <div className="nutrition-label">
-                                    <span>{n.label}</span>
-                                    <span style={{ color: n.color }}>{n.value || 0} {n.unit}</span>
-                                </div>
-                                <div className="nutrition-bar">
-                                    <div className="nutrition-bar-fill" style={{
-                                        width: `${Math.min(((n.value || 0) / n.max) * 100, 100)}%`,
-                                        background: `linear-gradient(90deg, ${n.color}, ${n.color}88)`
-                                    }} />
-                                </div>
+                <div className="card">
+                    <h2 style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: 16 }}>📊 Informação Nutricional</h2>
+                    {[
+                        { label: 'Calorias', value: recipe.calories, unit: 'kcal', color: '#34d399' },
+                        { label: 'Proteínas', value: recipe.protein, unit: 'g', color: '#60a5fa' },
+                        { label: 'Carbos', value: recipe.carbs, unit: 'g', color: '#fbbf24' },
+                        { label: 'Gorduras', value: recipe.fat, unit: 'g', color: '#f87171' }
+                    ].map(n => (
+                        <div key={n.label} style={{ marginBottom: 12 }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', marginBottom: 4 }}>
+                                <span>{n.label}</span>
+                                <span style={{ fontWeight: 600 }}>{n.value || 0}{n.unit}</span>
                             </div>
-                        ))}
-                    </div>
+                            <div style={{ height: 6, background: 'rgba(255,255,255,0.05)', borderRadius: 3, overflow: 'hidden' }}>
+                                <div style={{ 
+                                    height: '100%', 
+                                    width: `${Math.min((n.value || 0) / (n.label === 'Calorias' ? 8 : 0.5), 100)}%`, 
+                                    background: n.color,
+                                    borderRadius: 3
+                                }} />
+                            </div>
+                        </div>
+                    ))}
                 </div>
             </div>
 
@@ -291,94 +345,113 @@ const RecipeDetailPage = () => {
             <div className="card" style={{ marginTop: 24 }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
                     <h2 style={{ fontSize: '1.1rem', fontWeight: 700, margin: 0 }}>👨‍🍳 Modo de Preparo</h2>
-                    {!enriching && (
-                        <button
-                            className="btn btn-secondary btn-sm"
-                            onClick={enrichRecipe}
-                            title="Gerar instruções mais detalhadas com IA"
-                            style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '.75rem' }}
+                    <button className="btn btn-secondary btn-sm" onClick={enrichRecipe} disabled={enriching}>
+                        {enriching ? 'Processando...' : '✨ Detalhar com IA'}
+                    </button>
+                </div>
+                <div style={{ whiteSpace: 'pre-wrap', fontSize: '0.95rem', lineHeight: 1.8, color: 'var(--text-secondary)' }}>
+                    {recipe.instructions}
+                </div>
+            </div>
+
+            {/* Reviews Section */}
+            <div className="card" style={{ marginTop: 24 }}>
+                <h2 style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: 20, display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <Star size={18} className="text-accent" fill="var(--color-accent)" /> 
+                    Avaliações e Feedback
+                </h2>
+                
+                {/* Submit Review Form */}
+                <div style={{ marginBottom: 32, padding: 20, background: 'rgba(255,255,255,0.02)', borderRadius: 16, border: '1px solid var(--border)' }}>
+                    <h3 style={{ fontSize: '0.95rem', fontWeight: 700, marginBottom: 12 }}>O que achou desta receita?</h3>
+                    <form onSubmit={handleRatingSubmit}>
+                        <div style={{ display: 'flex', gap: 10, marginBottom: 16 }}>
+                            {[1, 2, 3, 4, 5].map(star => (
+                                <button
+                                    key={star}
+                                    type="button"
+                                    onClick={() => setMyRating(star)}
+                                    onMouseEnter={() => setHoverRating(star)}
+                                    onMouseLeave={() => setHoverRating(0)}
+                                    style={{ 
+                                        background: 'none', border: 'none', cursor: 'pointer', padding: 0,
+                                        color: star <= (hoverRating || myRating) ? 'var(--color-accent)' : 'rgba(255,255,255,0.1)',
+                                        transition: 'all 0.2s ease'
+                                    }}
+                                >
+                                    <Star size={28} fill={star <= (hoverRating || myRating) ? 'currentColor' : 'none'} />
+                                </button>
+                            ))}
+                        </div>
+                        <div style={{ position: 'relative' }}>
+                            <textarea
+                                className="form-control"
+                                placeholder="Conte-nos a sua experiência... (opcional)"
+                                value={myComment}
+                                onChange={e => setMyComment(e.target.value)}
+                                style={{ 
+                                    marginBottom: 16, minHeight: 100, fontSize: '0.9rem', 
+                                    padding: '12px', background: 'rgba(0,0,0,0.2)',
+                                    borderRadius: '12px'
+                                }}
+                            />
+                        </div>
+                        <button 
+                            type="submit" 
+                            className="btn btn-primary" 
+                            style={{ width: '100%', borderRadius: '12px' }}
+                            disabled={submittingReview || myRating === 0}
                         >
-                            ✨ Detalhar com IA
+                            {submittingReview ? (
+                                <span className="spinner" style={{ width: 18, height: 18 }} />
+                            ) : (
+                                <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                    <Send size={16} /> Publicar Avaliação
+                                </span>
+                            )}
                         </button>
-                    )}
-                    {enriching && (
-                        <span style={{ fontSize: '.8rem', color: 'var(--color-primary-light)', display: 'flex', alignItems: 'center', gap: 6 }}>
-                            <span className="spinner" style={{ width: 16, height: 16 }} /> Gerando passos detalhados...
-                        </span>
-                    )}
+                    </form>
                 </div>
 
-                {/* Step count summary */}
-                {(() => {
-                    const steps = (recipe.instructions || '').split('\n').filter(s => s.trim());
-                    return (
-                        <>
-                            <div style={{
-                                display: 'flex', alignItems: 'center', gap: 10, marginBottom: 20,
-                                padding: '10px 14px', borderRadius: 10,
-                                background: 'rgba(52,211,153,0.06)', border: '1px solid rgba(52,211,153,0.1)'
-                            }}>
-                                <span style={{ fontSize: '1.2rem' }}>📋</span>
-                                <span style={{ fontSize: '.82rem', color: 'var(--text-secondary)' }}>
-                                    <strong>{steps.length} passos</strong> de preparação
-                                    {recipe.prep_time_min > 0 && <> · <strong>{recipe.prep_time_min} min</strong> de preparo</>}
-                                    {recipe.cook_time_min > 0 && <> · <strong>{recipe.cook_time_min} min</strong> de cozedura</>}
-                                </span>
+                {/* Reviews List */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+                    {reviews.length > 0 ? reviews.map((rev, i) => (
+                        <div key={i} className="animate-fadeInUp" style={{ 
+                            padding: '16px', background: 'rgba(255,255,255,0.01)', 
+                            borderRadius: '16px', border: '1px solid var(--border)' 
+                        }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                                    <div style={{ 
+                                        width: 32, height: 32, borderRadius: '50%', background: 'var(--gradient-primary)',
+                                        display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: '0.75rem', color: '#064e3b'
+                                    }}>
+                                        {rev.user_name?.[0]?.toUpperCase() || 'U'}
+                                    </div>
+                                    <span style={{ fontWeight: 700, fontSize: '0.9rem' }}>{rev.user_name || 'Utilizador'}</span>
+                                </div>
+                                <div style={{ display: 'flex', color: 'var(--color-accent)' }}>
+                                    {[1, 2, 3, 4, 5].map(s => (
+                                        <Star key={s} size={12} fill={s <= rev.rating ? 'currentColor' : 'none'} />
+                                    ))}
+                                </div>
                             </div>
-
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
-                                {steps.map((step, i) => {
-                                    const cleanStep = step.replace(/^\d+[\.\)\-]\s*/, '').trim();
-                                    if (!cleanStep) return null;
-                                    const isLast = i === steps.length - 1;
-                                    return (
-                                        <div key={i} style={{
-                                            display: 'flex', gap: 16, position: 'relative',
-                                            paddingBottom: isLast ? 0 : 8, minHeight: 60
-                                        }}>
-                                            {/* Timeline connector line */}
-                                            {!isLast && (
-                                                <div style={{
-                                                    position: 'absolute', left: 15, top: 32,
-                                                    width: 2, bottom: 0,
-                                                    background: 'linear-gradient(to bottom, rgba(52,211,153,0.3), rgba(52,211,153,0.05))'
-                                                }} />
-                                            )}
-
-                                            {/* Step number circle */}
-                                            <div style={{
-                                                width: 32, height: 32, borderRadius: '50%', flexShrink: 0,
-                                                background: 'linear-gradient(135deg, var(--color-primary), var(--color-primary-light))',
-                                                color: '#064e3b',
-                                                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                                fontSize: '.8rem', fontWeight: 800,
-                                                boxShadow: '0 2px 8px rgba(52,211,153,0.3)',
-                                                zIndex: 1
-                                            }}>
-                                                {i + 1}
-                                            </div>
-
-                                            {/* Step content */}
-                                            <div style={{
-                                                flex: 1, padding: '6px 16px 16px',
-                                                borderRadius: 10,
-                                                background: i % 2 === 0 ? 'rgba(255,255,255,0.02)' : 'transparent',
-                                            }}>
-                                                <p style={{
-                                                    fontSize: '.9rem', color: 'var(--text-secondary)',
-                                                    lineHeight: 1.7, margin: 0,
-                                                    wordWrap: 'break-word', whiteSpace: 'pre-wrap'
-                                                }}>
-                                                    {cleanStep}
-                                                </p>
-                                            </div>
-                                        </div>
-                                    );
-                                })}
+                            {rev.comment && (
+                                <p style={{ fontSize: '0.88rem', color: 'var(--text-secondary)', margin: '0 0 10px 0', lineHeight: 1.5 }}>
+                                    {rev.comment}
+                                </p>
+                            )}
+                            <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: 4 }}>
+                                <Clock size={10} /> {new Date(rev.created_at).toLocaleDateString('pt-MZ', { day: 'numeric', month: 'long' })}
                             </div>
-                        </>
-                    );
-                })()}
+                        </div>
+                    )) : (
+                        <div style={{ textAlign: 'center', padding: '40px 0', opacity: 0.5 }}>
+                            <MessageSquare size={40} style={{ marginBottom: 12 }} />
+                            <p style={{ fontSize: '0.9rem' }}>Ainda não há avaliações. Seja o primeiro!</p>
+                        </div>
+                    )}
+                </div>
             </div>
         </div>
     );

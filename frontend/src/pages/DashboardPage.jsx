@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useTranslation } from 'react-i18next';
 import { recipeService, nutritionService } from '../services/api';
 import { 
     ScanLine, ChefHat, CalendarDays, BarChart3, Heart, 
@@ -16,22 +17,23 @@ const SkeletonCard = () => (
     </div>
 );
 
-const quickActions = [
-    { path: '/scan', icon: ScanLine, label: 'Escanear', desc: 'Identificar produtos', variant: 'scan' },
-    { path: '/recipes', icon: ChefHat, label: 'Receitas', desc: 'Sabor de Moçambique', variant: 'recipe' },
-    { path: '/favorites', icon: Heart, label: 'Favoritos', desc: 'Seus pratos salvos', variant: 'favorites' },
-    { path: '/history', icon: History, label: 'Histórico', desc: 'Scans realizados', variant: 'history' },
-    { path: '/meal-plan', icon: CalendarDays, label: 'Plano Semanal', desc: 'Organize sua dieta', variant: 'plan' },
-    { path: '/nutrition', icon: BarChart3, label: 'Nutrição', desc: 'Saúde e equilíbrio', variant: 'nutrition' },
-];
-
 const DashboardPage = () => {
+    const { t } = useTranslation();
     const { user } = useAuth();
     const [recipes, setRecipes] = useState([]);
     const [tips, setTips] = useState([]);
     const [loading, setLoading] = useState(true);
     const [deferredPrompt, setDeferredPrompt] = useState(null);
     const [showInstallBanner, setShowInstallBanner] = useState(false);
+
+    const quickActions = [
+        { path: '/scan', icon: ScanLine, label: t('common.scan'), desc: t('dashboard.scanDesc'), variant: 'scan' },
+        { path: '/recipes', icon: ChefHat, label: t('common.recipes'), desc: t('dashboard.recipeDesc'), variant: 'recipe' },
+        { path: '/favorites', icon: Heart, label: t('common.favorites'), desc: t('dashboard.favoritesDesc'), variant: 'favorites' },
+        { path: '/history', icon: History, label: t('common.history'), desc: t('dashboard.historyDesc'), variant: 'history' },
+        { path: '/meal-plan', icon: CalendarDays, label: t('common.mealPlan'), desc: t('dashboard.planDesc'), variant: 'plan' },
+        { path: '/nutrition', icon: BarChart3, label: t('common.nutrition'), desc: t('dashboard.nutritionDesc'), variant: 'nutrition' },
+    ];
 
     useEffect(() => {
         loadDashboard();
@@ -77,9 +79,9 @@ const DashboardPage = () => {
 
     const greeting = () => {
         const hour = new Date().getHours();
-        if (hour < 12) return 'Bom dia';
-        if (hour < 18) return 'Boa tarde';
-        return 'Boa noite';
+        if (hour < 12) return t('dashboard.goodMorning');
+        if (hour < 18) return t('dashboard.goodAfternoon');
+        return t('dashboard.goodEvening');
     };
 
     const getRecipeImage = (recipe, index) => {
@@ -94,7 +96,8 @@ const DashboardPage = () => {
             'https://images.unsplash.com/photo-1482049016688-2d3e1b311543?w=500&q=80',
         ];
         
-        return foodImages[index % foodImages.length];
+        const recipeId = parseInt(recipe.id) || index;
+        return foodImages[recipeId % foodImages.length];
     };
 
     return (
@@ -125,8 +128,8 @@ const DashboardPage = () => {
                                 <Download size={20} color="white" />
                             </div>
                             <div>
-                                <h4 style={{ color: '#064e3b', fontWeight: 800, margin: 0, fontSize: '0.95rem' }}>Baixar Aplicativo</h4>
-                                <p style={{ color: 'rgba(6, 78, 59, 0.7)', fontSize: '0.75rem', margin: 0 }}>Instale o Sabor Inteligente no seu telemóvel</p>
+                                <h4 style={{ color: '#064e3b', fontWeight: 800, margin: 0, fontSize: '0.95rem' }}>{t('dashboard.installApp')}</h4>
+                                <p style={{ color: 'rgba(6, 78, 59, 0.7)', fontSize: '0.75rem', margin: 0 }}>{t('dashboard.installDesc')}</p>
                             </div>
                         </div>
                         <ArrowRight size={20} color="#064e3b" />
@@ -146,7 +149,7 @@ const DashboardPage = () => {
                     {greeting()}, {user?.name?.split(' ')[0]} 👋
                 </h1>
                 <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: '0.95rem', margin: 0 }}>
-                    O que vamos cozinhar hoje?
+                    {t('dashboard.whatToCook')}
                 </p>
             </div>
 
@@ -161,7 +164,7 @@ const DashboardPage = () => {
                     letterSpacing: '1px',
                     opacity: 0.9
                 }}>
-                    Acesso Rápido
+                    {t('dashboard.quickAccess')}
                 </h2>
                 <div className="card-grid" style={{ gridTemplateColumns: 'repeat(2, 1fr)', gap: '12px' }}>
                     {quickActions.map((action, idx) => {
@@ -204,10 +207,10 @@ const DashboardPage = () => {
                         letterSpacing: '1px',
                         opacity: 0.9
                     }}>
-                        Receitas Populares
+                        {t('dashboard.popularRecipes')}
                     </h2>
                     <Link to="/recipes" style={{ color: 'var(--color-primary)', fontSize: '0.85rem', fontWeight: 700, textDecoration: 'none' }}>
-                        Ver todas
+                        {t('dashboard.viewAll')}
                     </Link>
                 </div>
 
@@ -252,9 +255,9 @@ const DashboardPage = () => {
                     </div>
                 ) : (
                     <div className="card" style={{ textAlign: 'center', padding: '40px 20px', borderRadius: '20px' }}>
-                        <p style={{ color: 'var(--text-secondary)', marginBottom: 16 }}>Comece sua jornada culinária agora!</p>
+                        <p style={{ color: 'var(--text-secondary)', marginBottom: 16 }}>{t('dashboard.startJourney')}</p>
                         <Link to="/scan" className="btn btn-primary" style={{ padding: '12px 24px', borderRadius: '12px' }}>
-                            Primeiro Scan
+                            {t('dashboard.firstScan')}
                         </Link>
                     </div>
                 )}

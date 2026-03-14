@@ -34,6 +34,8 @@ api.interceptors.response.use(
 export const authService = {
     login: (data) => api.post('/auth/login', data),
     register: (data) => api.post('/auth/register', data),
+    guestLogin: () => api.post('/auth/guest-login'),
+    logAction: (action) => api.post('/auth/log-action', { action }),
     forgotPassword: (data) => api.post('/auth/forgot-password', data),
     resetPassword: (data) => api.post('/auth/reset-password', data),
     getProfile: () => api.get('/auth/profile'),
@@ -119,6 +121,14 @@ export const challengeService = {
     getActive: () => api.get('/challenges/active'),
     join: (id) => api.post(`/challenges/${id}/join`),
     getMine: () => api.get('/challenges/mine'),
+};
+
+// Feedback
+export const feedbackService = {
+    submit: (data) => api.post('/feedback', data),
+    getAll: () => api.get('/feedback'), // Admin only
+    submitRecipeReview: (data) => api.post('/feedback/recipe', data),
+    getRecipeReviews: (recipeId) => api.get(`/feedback/recipe/${recipeId}`),
 };
 
 export default api;

@@ -1,133 +1,146 @@
-import { useEffect, useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
+import { Trophy, Target, Star, ChevronRight, CheckCircle2, Clock, ShieldCheck } from 'lucide-react';
 import { challengeService } from '../services/api';
 import { useToast } from '../context/ToastContext';
-import { Trophy, Target } from 'lucide-react';
+import { motion } from 'framer-motion';
 
 const ChallengesPage = () => {
+    const { t } = useTranslation();
+    const { showToast } = useToast();
     const [challenges, setChallenges] = useState([]);
     const [loading, setLoading] = useState(true);
-    const [joiningId, setJoiningId] = useState(null);
-    const toast = useToast();
-
-    const loadChallenges = async () => {
-        setLoading(true);
-        try {
-            const res = await challengeService.getActive();
-            setChallenges(res.data || []);
-        } catch (err) {
-            toast.error(err.response?.data?.message || 'Erro ao carregar desafios.');
-        } finally {
-            setLoading(false);
-        }
-    };
 
     useEffect(() => {
         loadChallenges();
     }, []);
 
-    const joinChallenge = async (id) => {
-        setJoiningId(id);
+    const loadChallenges = async () => {
         try {
-            await challengeService.join(id);
-            toast.success('Desafio ativado!');
-            await loadChallenges();
+            const res = await challengeService.getActive();
+            setChallenges(res.data || []);
         } catch (err) {
-            toast.error(err.response?.data?.message || 'Erro ao entrar no desafio.');
+            console.error(err);
         } finally {
-            setJoiningId(null);
+            setLoading(false);
         }
     };
 
-    if (loading) {
-        return (
-            <div className="spinner-container">
-                <div className="spinner"></div>
-                <span className="spinner-text">Carregando desafios...</span>
-            </div>
-        );
-    }
+    const handleJoin = async (id) => {
+        try {
+            await challengeService.join(id);
+            showToast(t('challenges.success_join') || 'Desafio aceito!', 'success');
+            loadChallenges();
+        } catch (err) {
+            showToast(err.response?.data?.message || 'Erro ao entrar no desafio', 'error');
+        }
+    };
+
+    const getIcon = (type) => {
+        switch(type) {
+            case 'scan_count': return <Target className="text-blue-400" />;
+            case 'meal_plan_created': return <Clock className="text-purple-400" />;
+            case 'favorites_added': return <Star className="text-yellow-400" />;
+            default: return <Trophy className="text-primary" />;
+        }
+    };
 
     return (
-        <div className="page-enter">
-            <div className="page-header">
-                <h1>Desafios Semanais</h1>
-                <p>Pequenas metas para manter a consistência.</p>
-            </div>
+        <div className="challenges-container p-6 max-w-4xl mx-auto pb-24">
+            <header className="mb-10 text-center">
+                <motion.div 
+                    initial={{ scale: 0.8, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    className="inline-block p-3 bg-primary/10 rounded-2xl mb-4"
+                >
+                    <Trophy size={40} className="text-primary" />
+                </motion.div>
+                <h1 className="text-4xl font-black text-white mb-2">{t('challenges.title')}</h1>
+                <p className="text-gray-400">{t('challenges.subtitle')}</p>
+            </header>
 
-            {challenges.length === 0 ? (
-                <div className="empty-state">
-                    <div className="empty-icon">🏆</div>
-                    <h3>Nenhum desafio ativo</h3>
-                    <p>Volte mais tarde para novos desafios.</p>
+            {loading ? (
+                <div className="flex justify-center p-20">
+                    <div className="spinner" />
                 </div>
             ) : (
-                <div className="card-grid">
-                    {challenges.map((ch) => {
-                        const percent = Math.min(100, Math.round((ch.progress / ch.target_value) * 100));
-                        return (
-                            <div key={ch.id} className="card">
-                                <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
-                                    <div style={{
-                                        width: 36, height: 36, borderRadius: 10, background: 'rgba(251,191,36,0.12)',
-                                        display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fcd34d'
-                                    }}>
-                                        <Trophy size={18} />
+                <div className="grid gap-6">
+                    {challenges.map((challenge, idx) => (
+                        <motion.div 
+                            key={challenge.id}
+                            initial={{ x: -20, opacity: 0 }}
+                            animate={{ x: 0, opacity: 1 }}
+                            transition={{ delay: idx * 0.1 }}
+                            className={`relative overflow-hidden bg-white/5 border rounded-2xl p-6 transition-all hover:border-primary/50 ${challenge.is_joined ? 'border-primary/30' : 'border-white/10'}`}
+                        >
+                            {challenge.is_completed && (
+                                <div className="absolute top-0 right-0 p-2 bg-green-500 text-white rounded-bl-xl">
+                                    <CheckCircle2 size={16} />
+                                </div>
+                            )}
+
+                            <div className="flex flex-col md:flex-row gap-6 items-start md:items-center">
+                                <div className="p-4 bg-white/5 rounded-2xl">
+                                    {getIcon(challenge.type)}
+                                </div>
+
+                                <div className="flex-1">
+                                    <div className="flex items-center gap-2 mb-1">
+                                        <h3 className="text-xl font-bold text-white">{challenge.title}</h3>
+                                        <span className="px-2 py-0.5 bg-white/10 rounded-full text-[10px] font-bold text-gray-400 uppercase tracking-wider">
+                                            {challenge.min_plan}
+                                        </span>
                                     </div>
-                                    <div>
-                                        <h3 style={{ margin: 0 }}>{ch.title}</h3>
-                                        <div style={{ fontSize: '.8rem', color: 'var(--text-muted)' }}>
-                                            {ch.start_date} → {ch.end_date}
+                                    <p className="text-sm text-gray-400 mb-4">{challenge.description}</p>
+                                    
+                                    {challenge.is_joined ? (
+                                        <div className="space-y-2">
+                                            <div className="flex justify-between text-xs font-bold mb-1">
+                                                <span className="text-primary">{t('challenges.progress')}</span>
+                                                <span className="text-white">{challenge.progress || 0} / {challenge.target_value}</span>
+                                            </div>
+                                            <div className="h-2 w-full bg-white/10 rounded-full overflow-hidden">
+                                                <motion.div 
+                                                    initial={{ width: 0 }}
+                                                    animate={{ width: `${Math.min(100, ((challenge.progress || 0) / challenge.target_value) * 100)}%` }}
+                                                    className="h-full bg-gradient-to-r from-primary to-emerald-400"
+                                                />
+                                            </div>
                                         </div>
-                                    </div>
+                                    ) : (
+                                        <div className="flex items-center gap-2 text-xs text-emerald-400 font-bold">
+                                            <ShieldCheck size={14} />
+                                            <span>{t('challenges.reward')}: {challenge.reward_text}</span>
+                                        </div>
+                                    )}
                                 </div>
 
-                                <p style={{ color: 'var(--text-secondary)' }}>{ch.description}</p>
-
-                                <div style={{ marginTop: 12, marginBottom: 12 }}>
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '.8rem' }}>
-                                        <span><Target size={12} /> {ch.progress}/{ch.target_value}</span>
-                                        <span>{percent}%</span>
-                                    </div>
-                                    <div style={{ height: 6, background: 'rgba(255,255,255,0.08)', borderRadius: 999, marginTop: 6 }}>
-                                        <div style={{
-                                            width: `${percent}%`,
-                                            height: '100%',
-                                            borderRadius: 999,
-                                            background: percent >= 100 ? '#34d399' : 'var(--color-primary)',
-                                            transition: 'width .3s ease'
-                                        }} />
-                                    </div>
+                                <div className="w-full md:w-auto">
+                                    {challenge.is_joined ? (
+                                        <button disabled className="w-full md:w-auto px-6 py-3 bg-white/10 text-gray-400 rounded-xl font-bold flex items-center justify-center gap-2">
+                                            <CheckCircle2 size={18} /> {t('challenges.joined')}
+                                        </button>
+                                    ) : (
+                                        <button 
+                                            onClick={() => handleJoin(challenge.id)}
+                                            className="w-full md:w-auto px-6 py-3 bg-primary text-white rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-primary-dark transition-all shadow-lg shadow-primary/20"
+                                        >
+                                            {t('challenges.join')} <ChevronRight size={18} />
+                                        </button>
+                                    )}
                                 </div>
-
-                                {ch.reward_text && (
-                                    <div className="info-pill" style={{ marginBottom: 10 }}>
-                                        🎁 {ch.reward_text}
-                                    </div>
-                                )}
-
-                                {ch.completed ? (
-                                    <button className="btn btn-secondary" disabled style={{ width: '100%' }}>
-                                        Concluído
-                                    </button>
-                                ) : ch.joined ? (
-                                    <button className="btn btn-primary" disabled style={{ width: '100%' }}>
-                                        Em andamento
-                                    </button>
-                                ) : (
-                                    <button
-                                        className="btn btn-primary"
-                                        style={{ width: '100%' }}
-                                        onClick={() => joinChallenge(ch.id)}
-                                        disabled={joiningId === ch.id}
-                                    >
-                                        {joiningId === ch.id ? 'Ativando...' : 'Participar'}
-                                    </button>
-                                )}
                             </div>
-                        );
-                    })}
+                        </motion.div>
+                    ))}
                 </div>
             )}
+
+            <div className="mt-12 p-8 bg-gradient-to-br from-primary/10 to-emerald-500/5 rounded-3xl border border-primary/20 text-center">
+                <h2 className="text-2xl font-bold text-white mb-2">💡 Dica de Mestre</h2>
+                <p className="text-gray-400 max-w-md mx-auto">
+                    Complete desafios para desbloquear emblemas exclusivos e descontos em planos Premium! Novos desafios toda segunda-feira.
+                </p>
+            </div>
         </div>
     );
 };

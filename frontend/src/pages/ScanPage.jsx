@@ -73,10 +73,9 @@ const RecipeResultCard = ({ recipe, isOptional }) => {
 
     // Parse missing_ingredients — supports both array of strings and array of objects
     const missingItems = (recipe.missing_ingredients || []).map(item => {
-        if (typeof item === 'string') return { name: item, estimated_price_mt: null, substitutions: [] };
+        if (typeof item === 'string') return { name: item, substitutions: [] };
         return {
             name: item.name,
-            estimated_price_mt: item.estimated_price_mt ?? null,
             substitutions: Array.isArray(item.substitutions) ? item.substitutions : []
         };
     });

@@ -12,6 +12,8 @@ const {
 
 router.post('/register', validateRegister, authController.register);
 router.post('/login', validateLogin, authController.login);
+router.post('/guest-login', authController.guestLogin);
+router.post('/log-action', authController.logGuestAction);
 router.post('/forgot-password', validateForgotPassword, authController.forgotPassword);
 router.post('/reset-password', validateResetPassword, authController.resetPassword);
 router.get('/profile', auth, authController.getProfile);

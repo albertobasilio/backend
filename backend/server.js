@@ -97,6 +97,7 @@ app.use('/api/ai', aiLimiter, require('./routes/aiRoutes'));
 app.use('/api/favorites', require('./routes/favoriteRoutes'));
 app.use('/api/admin', require('./routes/adminRoutes'));
 app.use('/api/challenges', require('./routes/challengeRoutes'));
+app.use('/api/feedback', require('./routes/feedbackRoutes'));
 
 // Health check
 app.get('/api/health', (req, res) => {

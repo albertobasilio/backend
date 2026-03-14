@@ -24,6 +24,8 @@ export const AuthProvider = ({ children }) => {
                     localStorage.removeItem('token');
                     localStorage.removeItem('user');
                     setUser(null);
+                    // Try guest login if profile refresh fails
+                    guestLogin().catch(() => {});
                 })
                 .finally(() => setLoading(false));
         } else {
@@ -33,6 +35,14 @@ export const AuthProvider = ({ children }) => {
 
     const login = async (email, password) => {
         const res = await authService.login({ email, password });
+        localStorage.setItem('token', res.data.token);
+        localStorage.setItem('user', JSON.stringify(res.data.user));
+        setUser(res.data.user);
+        return res.data;
+    };
+
+    const guestLogin = async () => {
+        const res = await authService.guestLogin();
         localStorage.setItem('token', res.data.token);
         localStorage.setItem('user', JSON.stringify(res.data.user));
         setUser(res.data.user);
@@ -59,7 +69,7 @@ export const AuthProvider = ({ children }) => {
     };
 
     return (
-        <AuthContext.Provider value={{ user, loading, login, register, logout, updateUser }}>
+        <AuthContext.Provider value={{ user, loading, login, guestLogin, register, logout, updateUser }}>
             {children}
         </AuthContext.Provider>
     );

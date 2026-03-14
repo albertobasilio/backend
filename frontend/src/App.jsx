@@ -12,12 +12,15 @@ import MealPlanPage from './pages/MealPlanPage';
 import ShoppingListPage from './pages/ShoppingListPage';
 import NutritionPage from './pages/NutritionPage';
 import ProfilePage from './pages/ProfilePage';
+import SettingsPage from './pages/SettingsPage';
+import FeedbackPage from './pages/FeedbackPage';
 import FavoritesPage from './pages/FavoritesPage';
 import HistoryPage from './pages/HistoryPage';
 import NotFoundPage from './pages/NotFoundPage';
 import PlansPage from './pages/PlansPage';
 import AdminUsersPage from './pages/AdminUsersPage';
 import ChallengesPage from './pages/ChallengesPage';
+import FastRecipesPage from './pages/FastRecipesPage';
 import AdminDashboardPage from './pages/AdminDashboardPage';
 import AdminRecipesPage from './pages/AdminRecipesPage';
 
@@ -31,7 +34,10 @@ const ProtectedRoute = () => {
             </div>
         );
     }
-    return user ? <Outlet /> : <Navigate to="/login" />;
+    
+    if (!user) return <Navigate to="/login" />;
+    
+    return <Outlet />;
 };
 
 const PLAN_ORDER = ['free', 'basic', 'pro', 'premium'];
@@ -57,25 +63,33 @@ const AppRoutes = () => {
             <Route path="/login" element={user ? <Navigate to="/" /> : <LoginPage />} />
             <Route path="/register" element={user ? <Navigate to="/" /> : <RegisterPage />} />
             <Route path="/plans" element={<PlansPage />} />
-            <Route path="/challenges" element={<ChallengesPage />} />
+            
+            <Route element={<Layout />}>
+                {/* Public Routes */}
+                <Route path="/" element={user ? <DashboardPage /> : <Navigate to="/recipes" replace />} />
+                <Route path="/recipes" element={<RecipesPage />} />
+                <Route path="/fast-recipes" element={<FastRecipesPage />} />
+                <Route path="/recipes/:id" element={<RecipeDetailPage />} />
+                <Route path="/challenges" element={<ChallengesPage />} />
 
-            {/* Protected routes with shared layout */}
-            <Route element={<ProtectedRoute />}>
-                <Route element={<Layout />}>
-                    <Route path="/" element={<DashboardPage />} />
+                {/* Protected routes */}
+                <Route element={<ProtectedRoute />}>
                     <Route path="/scan" element={<ScanPage />} />
-                    <Route path="/recipes" element={<RecipesPage />} />
-                    <Route path="/recipes/:id" element={<RecipeDetailPage />} />
                     <Route path="/profile" element={<ProfilePage />} />
+                    <Route path="/settings" element={<SettingsPage />} />
+                    <Route path="/feedback" element={<FeedbackPage />} />
+                    
                     <Route element={<PlanRoute minPlan="basic" />}>
                         <Route path="/meal-plan" element={<MealPlanPage />} />
                         <Route path="/favorites" element={<FavoritesPage />} />
                         <Route path="/history" element={<HistoryPage />} />
                     </Route>
+                    
                     <Route element={<PlanRoute minPlan="pro" />}>
                         <Route path="/shopping-list" element={<ShoppingListPage />} />
                         <Route path="/nutrition" element={<NutritionPage />} />
                     </Route>
+                    
                     <Route element={<AdminRoute />}>
                         <Route path="/admin" element={<AdminDashboardPage />} />
                         <Route path="/admin/users" element={<AdminUsersPage />} />

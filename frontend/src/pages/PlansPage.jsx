@@ -150,13 +150,12 @@ const PlansPage = () => {
                             </div>
 
                             <div style={{ textAlign: 'right', minWidth: '90px' }}>
-                                <div style={{ fontSize: '1.1rem', fontWeight: 800, color: 'white' }}>{plan.price}</div>
                                 <button
                                     onClick={() => handleSubscribe(plan)}
                                     className={`btn ${plan.buttonClass} btn-sm`}
                                     style={{ marginTop: '8px', width: '100%', fontSize: '0.75rem', height: '32px' }}
                                 >
-                                    {plan.id === 'free' ? 'Ativar' : 'Assinar'}
+                                    {plan.id === 'free' ? 'Ativar' : 'Aderir'}
                                 </button>
                             </div>
                         </motion.div>

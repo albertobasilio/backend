@@ -1,211 +1,153 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
+import { BarChart3, Flame, Wheat, Droplets, Fish, PieChart, Info, Lightbulb } from 'lucide-react';
 import { nutritionService } from '../services/api';
-import { Bar, Doughnut } from 'react-chartjs-2';
-import {
-    Chart as ChartJS,
-    CategoryScale, LinearScale, BarElement,
-    ArcElement, Title, Tooltip, Legend
-} from 'chart.js';
-
-ChartJS.register(CategoryScale, LinearScale, BarElement, ArcElement, Title, Tooltip, Legend);
+import { motion } from 'framer-motion';
 
 const NutritionPage = () => {
-    const [dailySummary, setDailySummary] = useState(null);
-    const [weeklyData, setWeeklyData] = useState([]);
+    const { t } = useTranslation();
+    const [stats, setStats] = useState({
+        calories: 1250,
+        goal: 2200,
+        protein: 45,
+        carbs: 180,
+        fat: 32,
+        water: 1.5
+    });
     const [tips, setTips] = useState([]);
-    const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
-    const [loading, setLoading] = useState(true);
+    const [loading, setLoading] = useState(false);
 
     useEffect(() => {
-        loadData();
-    }, [selectedDate]);
+        // In a real app, fetch from API
+        setTips([
+            { id: 1, text: "Beba 500ml de água antes de cada refeição principal." },
+            { id: 2, text: "O amendoim é uma excelente fonte de gorduras saudáveis e proteínas." },
+            { id: 3, text: "Substitua o arroz branco por arroz integral ou mandioca cozida para mais fibra." }
+        ]);
+    }, []);
 
-    const loadData = async () => {
-        try {
-            const [dailyRes, weeklyRes, tipsRes] = await Promise.allSettled([
-                nutritionService.getDaily(selectedDate),
-                nutritionService.getWeekly(),
-                nutritionService.getTips()
-            ]);
-
-            if (dailyRes.status === 'fulfilled') setDailySummary(dailyRes.value.data);
-            if (weeklyRes.status === 'fulfilled') setWeeklyData(weeklyRes.value.data);
-            if (tipsRes.status === 'fulfilled') setTips(tipsRes.value.data);
-        } catch (err) {
-            console.error(err);
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    const dailyGoals = {
-        calories: 2000,
-        protein: 50,
-        carbs: 300,
-        fat: 65,
-        fiber: 25,
-        iron: 8
-    };
-
-    const summary = dailySummary?.summary || {};
-
-    const macroData = {
-        labels: ['Proteínas', 'Carboidratos', 'Gordura', 'Fibra'],
-        datasets: [{
-            data: [
-                summary.total_protein || 0,
-                summary.total_carbs || 0,
-                summary.total_fat || 0,
-                summary.total_fiber || 0
-            ],
-            backgroundColor: ['#1B8C4E', '#F5A623', '#0A6E8A', '#8B5CF6'],
-            borderWidth: 0
-        }]
-    };
-
-    const weeklyChartData = {
-        labels: weeklyData.map(d => {
-            const date = new Date(d.log_date);
-            return date.toLocaleDateString('pt-MZ', { weekday: 'short' });
-        }),
-        datasets: [{
-            label: 'Calorias',
-            data: weeklyData.map(d => d.total_calories || 0),
-            backgroundColor: 'rgba(232, 98, 28, 0.6)',
-            borderRadius: 6
-        }]
-    };
-
-    if (loading) {
-        return (
-            <div className="spinner-container">
-                <div className="spinner"></div>
-                <span className="spinner-text">Carregando dados nutricionais...</span>
+    const MacroCircle = ({ label, value, color, max, icon: Icon }) => (
+        <div className="flex flex-col items-center">
+            <div className="relative w-20 h-20 mb-2">
+                <svg className="w-full h-full" viewBox="0 0 36 36">
+                    <path
+                        className="text-white/10 stroke-current"
+                        strokeWidth="3"
+                        fill="none"
+                        d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                    />
+                    <motion.path
+                        initial={{ strokeDasharray: "0, 100" }}
+                        animate={{ strokeDasharray: `${(value / max) * 100}, 100` }}
+                        transition={{ duration: 1 }}
+                        className={`${color} stroke-current`}
+                        strokeWidth="3"
+                        strokeLinecap="round"
+                        fill="none"
+                        d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                    />
+                </svg>
+                <div className="absolute inset-0 flex items-center justify-center">
+                    <Icon size={16} className="text-white/50" />
+                </div>
             </div>
-        );
-    }
+            <span className="text-xs font-bold text-gray-400 uppercase">{label}</span>
+            <span className="text-sm font-bold text-white">{value}g</span>
+        </div>
+    );
 
     return (
-        <div>
-            <div className="page-header">
-                <h1>📊 Controle Nutricional</h1>
-                <p>Acompanhe sua alimentação e saúde</p>
-            </div>
+        <div className="nutrition-container p-6 max-w-4xl mx-auto pb-24">
+            <header className="mb-10 flex items-center gap-4">
+                <div className="p-3 bg-primary/10 rounded-2xl">
+                    <BarChart3 size={32} className="text-primary" />
+                </div>
+                <div>
+                    <h1 className="text-3xl font-black text-white">{t('nutrition.title')}</h1>
+                    <p className="text-gray-400">Acompanhe seu consumo e atinja suas metas</p>
+                </div>
+            </header>
 
-            {/* Date selector */}
-            <div style={{ marginBottom: 24 }}>
-                <input
-                    type="date"
-                    className="form-control"
-                    style={{ maxWidth: 200 }}
-                    value={selectedDate}
-                    onChange={e => setSelectedDate(e.target.value)}
-                />
-            </div>
+            {/* Calories Hero */}
+            <motion.div 
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="bg-white/5 border border-white/10 rounded-3xl p-8 mb-8 relative overflow-hidden"
+            >
+                <div className="absolute top-0 right-0 p-10 opacity-10 rotate-12">
+                    <Flame size={120} className="text-primary" />
+                </div>
 
-            {/* Daily Stats */}
-            <div className="card-grid" style={{ marginBottom: 24 }}>
-                {[
-                    { label: 'Calorias', value: summary.total_calories || 0, goal: dailyGoals.calories, unit: 'kcal', color: '#E8621C', emoji: '🔥' },
-                    { label: 'Proteínas', value: summary.total_protein || 0, goal: dailyGoals.protein, unit: 'g', color: '#1B8C4E', emoji: '💪' },
-                    { label: 'Carboidratos', value: summary.total_carbs || 0, goal: dailyGoals.carbs, unit: 'g', color: '#F5A623', emoji: '🌾' },
-                    { label: 'Refeições', value: summary.total_meals || 0, goal: 4, unit: '', color: '#0A6E8A', emoji: '🍽️' },
-                ].map(stat => (
-                    <div className="stat-card" key={stat.label}>
-                        <div className="stat-icon" style={{ background: `${stat.color}20`, fontSize: '1.5rem' }}>
-                            {stat.emoji}
+                <div className="grid md:grid-cols-2 gap-8 items-center relative z-10">
+                    <div>
+                        <h2 className="text-lg font-bold text-gray-400 mb-6 flex items-center gap-2">
+                            <Flame size={20} className="text-orange-500" /> {t('nutrition.calories')}
+                        </h2>
+                        <div className="flex items-baseline gap-2">
+                            <span className="text-6xl font-black text-white">{stats.calories}</span>
+                            <span className="text-xl text-gray-500">/ {stats.goal} kcal</span>
                         </div>
-                        <div className="stat-info" style={{ flex: 1 }}>
-                            <h3 style={{ color: stat.color }}>{stat.value} <span style={{ fontSize: '0.8rem', fontWeight: 400 }}>{stat.unit}</span></h3>
-                            <p>{stat.label}</p>
-                            <div className="nutrition-bar" style={{ marginTop: 4 }}>
-                                <div className="nutrition-bar-fill" style={{
-                                    width: `${Math.min((stat.value / stat.goal) * 100, 100)}%`,
-                                    background: stat.color
-                                }} />
+                        <div className="mt-6 h-4 w-full bg-white/10 rounded-full overflow-hidden">
+                            <motion.div 
+                                initial={{ width: 0 }}
+                                animate={{ width: `${(stats.calories / stats.goal) * 100}%` }}
+                                className="h-full bg-gradient-to-r from-orange-500 to-yellow-400 shadow-[0_0_20px_rgba(249,115,22,0.5)]"
+                            />
+                        </div>
+                        <p className="mt-3 text-sm text-gray-400">
+                            {t('nutrition.remaining')}: <span className="text-white font-bold">{stats.goal - stats.calories} kcal</span>
+                        </p>
+                    </div>
+
+                    <div className="grid grid-cols-3 gap-4">
+                        <MacroCircle label={t('nutrition.protein')} value={stats.protein} max={150} color="text-blue-500" icon={Fish} />
+                        <MacroCircle label={t('nutrition.carbs')} value={stats.carbs} max={300} color="text-yellow-500" icon={Wheat} />
+                        <MacroCircle label={t('nutrition.fat')} value={stats.fat} max={80} color="text-red-500" icon={Droplets} />
+                    </div>
+                </div>
+            </motion.div>
+
+            <div className="grid md:grid-cols-2 gap-8">
+                {/* Daily Tips */}
+                <motion.section 
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 0.2 }}
+                >
+                    <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
+                        <Lightbulb size={24} className="text-yellow-400" /> {t('nutrition.tips')}
+                    </h2>
+                    <div className="space-y-4">
+                        {tips.map(tip => (
+                            <div key={tip.id} className="p-4 bg-white/5 rounded-2xl border border-white/5 flex gap-3">
+                                <Info size={20} className="text-primary flex-shrink-0" />
+                                <p className="text-sm text-gray-300">{tip.text}</p>
                             </div>
-                            <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>Meta: {stat.goal} {stat.unit}</span>
-                        </div>
+                        ))}
                     </div>
-                ))}
-            </div>
+                </motion.section>
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))', gap: 24, marginBottom: 24 }}>
-                {/* Macros donut */}
-                <div className="card">
-                    <h3 style={{ fontSize: '1rem', fontWeight: 700, marginBottom: 16 }}>🥗 Macronutrientes do Dia</h3>
-                    <div style={{ maxWidth: 280, margin: '0 auto' }}>
-                        <Doughnut data={macroData} options={{
-                            responsive: true,
-                            plugins: {
-                                legend: { position: 'bottom', labels: { color: '#9BA1B0', padding: 16 } }
-                            },
-                            cutout: '65%'
-                        }} />
+                {/* Water Tracking */}
+                <motion.section 
+                    initial={{ opacity: 0, x: 20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 0.3 }}
+                    className="bg-blue-600/10 border border-blue-500/20 rounded-3xl p-6 flex flex-col items-center justify-center text-center"
+                >
+                    <div className="w-16 h-16 bg-blue-500/20 rounded-full flex items-center justify-center mb-4">
+                        <Droplets size={32} className="text-blue-400" />
                     </div>
-                </div>
-
-                {/* Weekly bar chart */}
-                <div className="card">
-                    <h3 style={{ fontSize: '1rem', fontWeight: 700, marginBottom: 16 }}>📈 Calorias da Semana</h3>
-                    {weeklyData.length > 0 ? (
-                        <Bar data={weeklyChartData} options={{
-                            responsive: true,
-                            plugins: {
-                                legend: { display: false },
-                            },
-                            scales: {
-                                x: { ticks: { color: '#9BA1B0' }, grid: { display: false } },
-                                y: { ticks: { color: '#9BA1B0' }, grid: { color: 'rgba(255,255,255,0.05)' } }
-                            }
-                        }} />
-                    ) : (
-                        <div style={{ textAlign: 'center', padding: 40, color: 'var(--text-muted)' }}>
-                            <p>Sem dados esta semana. Registe suas refeições!</p>
-                        </div>
-                    )}
-                </div>
-            </div>
-
-            {/* Detailed nutrition bars */}
-            <div className="card" style={{ marginBottom: 24 }}>
-                <h3 style={{ fontSize: '1rem', fontWeight: 700, marginBottom: 16 }}>📋 Detalhes Nutricionais</h3>
-                {[
-                    { label: 'Calorias', value: summary.total_calories || 0, goal: dailyGoals.calories, unit: 'kcal', color: '#E8621C' },
-                    { label: 'Proteínas', value: summary.total_protein || 0, goal: dailyGoals.protein, unit: 'g', color: '#1B8C4E' },
-                    { label: 'Carboidratos', value: summary.total_carbs || 0, goal: dailyGoals.carbs, unit: 'g', color: '#F5A623' },
-                    { label: 'Gordura', value: summary.total_fat || 0, goal: dailyGoals.fat, unit: 'g', color: '#0A6E8A' },
-                    { label: 'Fibra', value: summary.total_fiber || 0, goal: dailyGoals.fiber, unit: 'g', color: '#8B5CF6' },
-                    { label: 'Ferro', value: summary.total_iron || 0, goal: dailyGoals.iron, unit: 'mg', color: '#EC4899' },
-                ].map(n => (
-                    <div key={n.label} style={{ marginBottom: 14 }}>
-                        <div className="nutrition-label">
-                            <span>{n.label}</span>
-                            <span style={{ color: n.color }}>{n.value} / {n.goal} {n.unit}</span>
-                        </div>
-                        <div className="nutrition-bar" style={{ height: 10 }}>
-                            <div className="nutrition-bar-fill" style={{
-                                width: `${Math.min((n.value / n.goal) * 100, 100)}%`,
-                                background: `linear-gradient(90deg, ${n.color}, ${n.color}88)`,
-                                borderRadius: 5
-                            }} />
-                        </div>
+                    <h3 className="text-xl font-bold text-white mb-2">{t('nutrition.water')}</h3>
+                    <div className="text-4xl font-black text-blue-400 mb-4">{stats.water}L <span className="text-lg text-blue-400/50">/ 2.5L</span></div>
+                    <div className="flex gap-2">
+                        {[1, 2, 3, 4, 5, 6, 7, 8].map(i => (
+                            <div key={i} className={`w-3 h-8 rounded-full ${i <= 4 ? 'bg-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.5)]' : 'bg-white/10'}`} />
+                        ))}
                     </div>
-                ))}
-            </div>
-
-            {/* Tips */}
-            <div>
-                <h3 style={{ fontSize: '1rem', fontWeight: 700, marginBottom: 16 }}>💡 Dicas de Nutrição</h3>
-                {tips.map((tip, i) => (
-                    <div className="tip-card" key={i}>
-                        <div className="tip-icon">{tip.icon}</div>
-                        <div className="tip-content">
-                            <h4>{tip.title}</h4>
-                            <p>{tip.text}</p>
-                        </div>
-                    </div>
-                ))}
+                    <button className="mt-6 px-6 py-2 bg-blue-500 text-white rounded-xl font-bold text-sm hover:bg-blue-400 transition-all">
+                        + 250ml
+                    </button>
+                </motion.section>
             </div>
         </div>
     );

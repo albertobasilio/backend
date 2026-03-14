@@ -6,6 +6,51 @@ const { AppError } = require('../middleware/errorHandler');
 const logger = require('../utils/logger');
 const { sendRecoveryCode } = require('../services/emailService');
 
+// Guest Login
+exports.guestLogin = asyncHandler(async (req, res) => {
+    const ip = req.ip || req.headers['x-forwarded-for'] || 'unknown';
+    const userAgent = req.headers['user-agent'] || 'unknown';
+
+    // Log the guest entry
+    await db.query(
+        'INSERT INTO guest_logs (ip_address, user_agent, action) VALUES (?, ?, ?)',
+        [ip, userAgent, 'login']
+    );
+
+    // Create a special token for guests
+    const token = jwt.sign(
+        { id: 0, email: 'guest@sabor.mz', role: 'guest' },
+        process.env.JWT_SECRET,
+        { expiresIn: '1d' }
+    );
+
+    res.json({
+        message: 'Acesso como visitante bem-sucedido!',
+        token,
+        user: {
+            id: 0,
+            name: 'Visitante',
+            email: 'guest@sabor.mz',
+            role: 'guest',
+            plan: 'premium'
+        }
+    });
+});
+
+// Log Guest Action
+exports.logGuestAction = asyncHandler(async (req, res) => {
+    const { action } = req.body;
+    const ip = req.ip || req.headers['x-forwarded-for'] || 'unknown';
+    const userAgent = req.headers['user-agent'] || 'unknown';
+
+    await db.query(
+        'INSERT INTO guest_logs (ip_address, user_agent, action) VALUES (?, ?, ?)',
+        [ip, userAgent, action]
+    );
+
+    res.json({ success: true });
+});
+
 // Register
 exports.register = asyncHandler(async (req, res) => {
     const { name, email, password, phone, region } = req.body;
@@ -41,7 +86,7 @@ exports.register = asyncHandler(async (req, res) => {
             name,
             email,
             region: region || 'Maputo',
-            plan: 'free',
+            plan: 'premium',
             role: 'user'
         }
     });
@@ -87,6 +132,23 @@ exports.login = asyncHandler(async (req, res) => {
 
 // Get profile
 exports.getProfile = asyncHandler(async (req, res) => {
+    if (req.user.id === 0) {
+        return res.json({
+            user: {
+                id: 0,
+                name: 'Visitante',
+                email: 'guest@sabor.mz',
+                role: 'guest',
+                plan: 'premium'
+            },
+            dietaryProfile: {
+                gluten_free: 0, vegan: 0, vegetarian: 0, low_sugar: 0,
+                diabetic: 0, child_diet: 0, athlete: 0, elderly: 0, pregnant: 0,
+                allergies: '', notes: ''
+            }
+        });
+    }
+
     const [users] = await db.query('SELECT * FROM users WHERE id = ?', [req.user.id]);
     if (users.length === 0) {
         throw new AppError('Utilizador não encontrado.', 404);
@@ -115,18 +177,18 @@ exports.getProfile = asyncHandler(async (req, res) => {
 
 // Update profile
 exports.updateProfile = asyncHandler(async (req, res) => {
+    if (req.user.id === 0) {
+        return res.json({ message: 'Visitantes não podem alterar o perfil permanentemente.' });
+    }
+
     const { name, phone, region } = req.body;
-
-    await db.query(
-        'UPDATE users SET name = ?, phone = ?, region = ? WHERE id = ?',
-        [name, phone, region, req.user.id]
-    );
-
-    res.json({ message: 'Perfil atualizado com sucesso!' });
-});
-
+...
 // Update dietary profile
 exports.updateDietaryProfile = asyncHandler(async (req, res) => {
+    if (req.user.id === 0) {
+        return res.json({ message: 'Visitantes não podem alterar o perfil alimentar permanentemente.' });
+    }
+
     const {
         gluten_free, vegan, vegetarian, low_sugar,
         diabetic, child_diet, athlete, elderly, pregnant, allergies, notes

@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
-import { recipeService } from '../services/api';
-import { Search, Clock, Flame, MapPin } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
+import { recipeService, authService } from '../services/api';
+import { useAuth } from '../context/AuthContext';
+import { Search, Clock, Flame, MapPin, Lock } from 'lucide-react';
 
 const SkeletonCard = () => (
     <div className="skeleton-card">
@@ -28,6 +29,8 @@ const getDifficultyClass = (d) => {
 };
 
 const RecipesPage = () => {
+    const { user } = useAuth();
+    const navigate = useNavigate();
     const [recipes, setRecipes] = useState([]);
     const [loading, setLoading] = useState(true);
     const [search, setSearch] = useState('');
@@ -46,10 +49,37 @@ const RecipesPage = () => {
         }
     };
 
+    const handleRecipeClick = async (recipeId) => {
+        if (user?.role === 'guest') {
+            await authService.logAction(`tentou ver receita ${recipeId} como guest`);
+            navigate('/register');
+            return;
+        }
+        navigate(`/recipes/${recipeId}`);
+    };
+
+    const getRecipeImage = (recipe, index) => {
+        if (recipe.image_url && recipe.image_url.startsWith('http')) return recipe.image_url;
+        
+        const foodImages = [
+            'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=500&q=80',
+            'https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=500&q=80',
+            'https://images.unsplash.com/photo-1473093226795-af9932fe5856?w=500&q=80',
+            'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=500&q=80',
+            'https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=500&q=80',
+            'https://images.unsplash.com/photo-1482049016688-2d3e1b311543?w=500&q=80',
+        ];
+        
+        return foodImages[index % foodImages.length];
+    };
+
     const filtered = recipes.filter(r => {
+        const tags = typeof r.tags === 'string' ? r.tags : JSON.stringify(r.tags || []);
+        const isFastFood = tags.includes('fast_food');
+        
         const matchSearch = !search || r.title?.toLowerCase().includes(search.toLowerCase());
         const matchRegion = !region || r.region === region;
-        return matchSearch && matchRegion;
+        return !isFastFood && matchSearch && matchRegion;
     });
 
     return (
@@ -90,50 +120,74 @@ const RecipesPage = () => {
             ) : filtered.length > 0 ? (
                 <div className="card-grid">
                     {filtered.map((recipe, idx) => {
-                        const CardWrapper = recipe.is_locked ? 'div' : Link;
-                        const wrapperProps = recipe.is_locked
-                            ? { key: recipe.id, style: { textDecoration: 'none', color: 'inherit', cursor: 'not-allowed' } }
-                            : { key: recipe.id, to: `/recipes/${recipe.id}`, style: { textDecoration: 'none', color: 'inherit' } };
+                        const isGuest = user?.role === 'guest';
+                        const isLocked = recipe.is_locked || isGuest;
+                        
                         return (
-                        <CardWrapper {...wrapperProps}>
-                            <div className={`recipe-card ${getDifficultyClass(recipe.difficulty)} animate-fadeInUp stagger-${Math.min(idx + 1, 6)}`} style={recipe.is_locked ? { opacity: 0.7 } : null}>
-                                {recipe.image_url && (
-                                    <div className="recipe-card-image" style={{ width: '100%', height: 160, overflow: 'hidden' }}>
+                            <div 
+                                key={recipe.id} 
+                                onClick={() => handleRecipeClick(recipe.id)}
+                                style={{ textDecoration: 'none', color: 'inherit', cursor: 'pointer' }}
+                            >
+                                <div className={`recipe-card ${getDifficultyClass(recipe.difficulty)} animate-fadeInUp stagger-${Math.min(idx + 1, 6)}`} style={isLocked ? { opacity: 0.85 } : null}>
+                                    <div className="recipe-card-image" style={{ width: '100%', height: 160, overflow: 'hidden', position: 'relative', background: '#1a1a1a' }}>
                                         <img
-                                            src={recipe.image_url}
+                                            src={getRecipeImage(recipe, idx)}
                                             alt={recipe.title}
                                             style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                                            onError={(e) => { e.target.style.display = 'none'; }}
+                                            onError={(e) => { 
+                                                e.target.src = 'https://images.unsplash.com/photo-1495195129352-aec325a55b65?w=500&q=80'; 
+                                            }}
                                         />
+                                        {isGuest && (
+                                            <div style={{ 
+                                                position: 'absolute', 
+                                                inset: 0, 
+                                                background: 'rgba(0,0,0,0.5)', 
+                                                backdropFilter: 'blur(4px)',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'center',
+                                                color: 'white',
+                                                fontSize: '0.8rem',
+                                                fontWeight: 700,
+                                                textAlign: 'center',
+                                                padding: 10
+                                            }}>
+                                                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
+                                                    <Lock size={20} />
+                                                    Crie conta para ver
+                                                </div>
+                                            </div>
+                                        )}
                                     </div>
-                                )}
-                                <div className="recipe-card-body">
-                                    <h3>{recipe.title}</h3>
-                                    <p>{recipe.description}</p>
-                                </div>
-                                <div className="recipe-card-footer">
-                                    <div className="recipe-meta">
-                                        <span><Clock size={13} /> {(recipe.prep_time_min || 0) + (recipe.cook_time_min || 0)}min</span>
-                                        <span><Flame size={13} /> {recipe.calories}kcal</span>
+                                    <div className="recipe-card-body">
+                                        <h3>{recipe.title}</h3>
+                                        <p>{recipe.description}</p>
                                     </div>
-                                    <div style={{ display: 'flex', gap: 6 }}>
-                                        {recipe.region && (
-                                            <span className="recipe-badge region">{recipe.region}</span>
-                                        )}
-                                        {recipe.difficulty && (
-                                            <span className="recipe-badge difficulty">{getDifficultyLabel(recipe.difficulty)}</span>
-                                        )}
-                                        {recipe.is_locked && (
-                                            <span className="recipe-badge difficulty">Bloqueado</span>
-                                        )}
-                                        {recipe.is_regional_exclusive && (
-                                            <span className="recipe-badge region">Exclusiva</span>
-                                        )}
+                                    <div className="recipe-card-footer">
+                                        <div className="recipe-meta">
+                                            <span><Clock size={13} /> {(recipe.prep_time_min || 0) + (recipe.cook_time_min || 0)}min</span>
+                                            <span><Flame size={13} /> {recipe.calories}kcal</span>
+                                        </div>
+                                        <div style={{ display: 'flex', gap: 6 }}>
+                                            {recipe.region && (
+                                                <span className="recipe-badge region">{recipe.region}</span>
+                                            )}
+                                            {recipe.difficulty && (
+                                                <span className="recipe-badge difficulty">{getDifficultyLabel(recipe.difficulty)}</span>
+                                            )}
+                                            {isLocked && (
+                                                <span className="recipe-badge difficulty" style={{ background: 'var(--color-accent)', color: 'black' }}>
+                                                    {isGuest ? 'Registo' : 'Bloqueado'}
+                                                </span>
+                                            )}
+                                        </div>
                                     </div>
                                 </div>
                             </div>
-                        </CardWrapper>
-                    );})}
+                        );
+                    })}
                 </div>
             ) : (
                 <div className="empty-state">

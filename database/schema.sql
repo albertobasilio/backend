@@ -273,6 +273,19 @@ CREATE TABLE IF NOT EXISTS user_challenges (
   FOREIGN KEY (challenge_id) REFERENCES challenges(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- Recipe Reviews & Feedback
+CREATE TABLE IF NOT EXISTS recipe_reviews (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  user_id INT NOT NULL,
+  recipe_id INT NOT NULL,
+  rating TINYINT NOT NULL CHECK (rating >= 1 AND rating <= 5),
+  comment TEXT,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE KEY unique_user_recipe_review (user_id, recipe_id),
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+  FOREIGN KEY (recipe_id) REFERENCES recipes(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 -- ============================================
 -- Seed: Traditional Mozambican Recipes
 -- ============================================
