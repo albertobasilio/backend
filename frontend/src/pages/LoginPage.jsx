@@ -101,7 +101,7 @@ const LoginPage = () => {
                         Agradecemos a sua paciência.
                     </p>
                     <p style={{ marginTop: '24px', fontSize: '11px', opacity: 0.5 }}>
-                        Desenvolvido por Mr Beto (basilio.infomidia.co.mz)
+                        Desenvolvido por Mr Beto (basilio@infomidia.co.mz)
                     </p>
                 </div>
             </div>
