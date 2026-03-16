@@ -1,39 +1,39 @@
 # =============================================
-# Sabor Inteligente MZ - Dockerfile
-# Multi-stage build: Frontend build → Backend serve
+# Sabor Inteligente MZ - Backend Dockerfile
 # =============================================
 
-# Stage 1: Build frontend
-FROM node:20-alpine AS frontend-build
-WORKDIR /app/frontend
-COPY frontend/package*.json ./
-RUN npm ci
-COPY frontend/ ./
-RUN npm run build
-
-# Stage 2: Backend + serve built frontend
 FROM node:20-alpine
+
+# Instalar dependências necessárias para processamento de imagem (Sharp) se necessário
+# RUN apk add --no-cache vips-dev fftw-dev build-base
+
 WORKDIR /app
 
-# Copy backend
-COPY backend/package*.json ./
+# Copiar ficheiros de dependências
+COPY package*.json ./
+
+# Instalar dependências (apenas produção para imagem final)
 RUN npm ci --production
-COPY backend/ ./
 
-# Copy built frontend to public directory
-COPY --from=frontend-build /app/frontend/dist ./public
+# Copiar o resto do código do backend
+COPY . .
 
-# Create directories
+# Criar directórios necessários para persistência
 RUN mkdir -p uploads logs
 
-# Environment
+# Definir permissões para os directórios criados
+RUN chmod 777 uploads logs
+
+# Variáveis de ambiente padrão
 ENV NODE_ENV=production
 ENV PORT=5000
 
+# Porta exposta pela aplicação
 EXPOSE 5000
 
-# Health check
+# Health check para monitorizar se o servidor está vivo
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
   CMD wget -qO- http://localhost:5000/api/health || exit 1
 
+# Comando para iniciar o servidor
 CMD ["node", "server.js"]
