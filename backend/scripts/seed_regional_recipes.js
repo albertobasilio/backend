@@ -40,17 +40,6 @@ const regionalRecipes = [
         tags: '["centro", "peixe", "basico"]'
     },
     {
-        title: 'Caril de Amendoim com Quiabos',
-        description: 'Receita clássica de Inhambane, a terra da boa gente, rica em amendoim e coco.',
-        region: 'Inhambane',
-        difficulty: 'facil',
-        prep_time_min: 20,
-        cook_time_min: 30,
-        calories: 340,
-        instructions: '1. Refogue cebola e tomate.\n2. Adicione os quiabos cortados.\n3. Junte o amendoim pilado dissolvido em leite de coco.\n4. Cozinhe até o molho ficar espesso e brilhante.',
-        tags: '["sul", "vegetariano", "amendoim"]'
-    },
-    {
         title: 'Mucapata',
         description: 'Prato da Zambézia feito com arroz, feijão soroco e leite de coco, com consistência pastosa.',
         region: 'Zambézia',

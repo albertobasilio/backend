@@ -11,6 +11,17 @@ const optionalAuth = async (req, res, next) => {
 
     try {
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        
+        if (decoded.role === 'guest') {
+            req.user = {
+                id: 0,
+                email: 'guest@sabor.mz',
+                role: 'guest',
+                plan: 'premium'
+            };
+            return next();
+        }
+
         const [users] = await db.query(
             'SELECT id, email, plan, role FROM users WHERE id = ? LIMIT 1',
             [decoded.id]

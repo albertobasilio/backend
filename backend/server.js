@@ -8,6 +8,8 @@ const { errorHandler } = require('./middleware/errorHandler');
 require('dotenv').config();
 
 const app = express();
+app.set('trust proxy', 1);
+
 const PORT = process.env.PORT || 5000;
 
 // --------------- Security Middleware ---------------
@@ -29,10 +31,10 @@ const allowedOrigins = [
 const isAllowedOrigin = (origin) => {
     // Permite requisições sem origin (como mobile apps, curl, Docker Healthcheck wget)
     if (!origin) return true;
-    
+
     // Em desenvolvimento, permite tudo
     if (!isProduction) return true;
-    
+
     // Em produção, verifica a whitelist
     return allowedOrigins.includes(origin);
 };
@@ -87,7 +89,13 @@ app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // --------------- Routes ---------------
-app.use('/api/auth', authLimiter, require('./routes/authRoutes'));
+app.use('/api/auth/login', authLimiter);
+app.use('/api/auth/register', authLimiter);
+app.use('/api/auth/guest-login', authLimiter);
+app.use('/api/auth/forgot-password', authLimiter);
+app.use('/api/auth/reset-password', authLimiter);
+
+app.use('/api/auth', require('./routes/authRoutes'));
 app.use('/api/ingredients', require('./routes/ingredientRoutes'));
 app.use('/api/recipes', require('./routes/recipeRoutes'));
 app.use('/api/meal-plans', require('./routes/mealPlanRoutes'));

@@ -19,7 +19,7 @@ exports.guestLogin = asyncHandler(async (req, res) => {
 
     // Create a special token for guests
     const token = jwt.sign(
-        { id: 0, email: 'guest@sabor.mz', role: 'guest' },
+        { id: 0, email: 'guest@sabor.mz', role: 'guest', plan: 'premium' },
         process.env.JWT_SECRET,
         { expiresIn: '1d' }
     );
@@ -182,7 +182,38 @@ exports.updateProfile = asyncHandler(async (req, res) => {
     }
 
     const { name, phone, region } = req.body;
-...
+
+    const updates = [];
+    const values = [];
+
+    if (name) { updates.push('name = ?'); values.push(name); }
+    if (phone !== undefined) { updates.push('phone = ?'); values.push(phone); }
+    if (region) { updates.push('region = ?'); values.push(region); }
+
+    if (updates.length === 0) {
+        return res.json({ message: 'Nenhum dado para atualizar.' });
+    }
+
+    values.push(req.user.id);
+    await db.query(`UPDATE users SET ${updates.join(', ')} WHERE id = ?`, values);
+
+    const [updated] = await db.query('SELECT id, name, email, phone, region, plan, role FROM users WHERE id = ?', [req.user.id]);
+
+    const updatedUser = updated[0];
+    res.json({
+        message: 'Perfil atualizado com sucesso!',
+        user: {
+            id: updatedUser.id,
+            name: updatedUser.name,
+            email: updatedUser.email,
+            phone: updatedUser.phone,
+            region: updatedUser.region,
+            plan: updatedUser.plan,
+            role: updatedUser.role || 'user'
+        }
+    });
+});
+
 // Update dietary profile
 exports.updateDietaryProfile = asyncHandler(async (req, res) => {
     if (req.user.id === 0) {

@@ -93,8 +93,7 @@ Categorias: vegetal, fruta, proteina, grao, tempero, lacteo, oleo, cereal, bebid
         }
       ],
       max_tokens: 2000,
-      temperature: 0.2,
-      response_format: { type: 'json_object' }
+      temperature: 0.2
     });
 
     const content = response.choices[0].message.content;

@@ -11,6 +11,14 @@ const auth = async (req, res, next) => {
 
     try {
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        if (decoded.role === 'guest') {
+            req.user = {
+                ...decoded,
+                plan: 'premium'
+            };
+            return next();
+        }
+
         const [users] = await db.query('SELECT * FROM users WHERE id = ? LIMIT 1', [decoded.id]);
 
         if (users.length === 0) {

@@ -59,19 +59,28 @@ exports.analyzeImage = asyncHandler(async (req, res) => {
     try {
         let imageBase64;
         if (req.file) {
+            logger.info(`Processando ficheiro Multer: ${req.file.originalname} (${req.file.size} bytes)`);
             const compressed = await compressImage(req.file.buffer);
             imageBase64 = compressed.toString('base64');
-        } else {
+        } else if (req.body.image) {
+            logger.info(`Processando imagem Base64 do body (tamanho: ${req.body.image.length})`);
             const raw = req.body.image.replace(/^data:image\/\w+;base64,/, '');
             const buffer = Buffer.from(raw, 'base64');
             const compressed = await compressImage(buffer);
             imageBase64 = compressed.toString('base64');
+        } else {
+            logger.warn('analyzeImage: Nenhum ficheiro ou body.image fornecido');
+            return res.status(400).json({ message: 'Forneca uma imagem.' });
         }
 
+        logger.info('Chamando AI Service para analise de imagem...');
         const result = await aiService.analyzeImage(imageBase64);
+        logger.info(`AI detectou ${result.products?.length || 0} produtos`);
 
         const matchedIngredients = [];
-        for (const detected of result.ingredients) {
+        const detectedItems = result.products || result.ingredients || [];
+        
+        for (const detected of detectedItems) {
             const [rows] = await db.query(
                 'SELECT * FROM ingredients WHERE name LIKE ? OR name_local LIKE ? LIMIT 1',
                 [`%${detected.name}%`, `%${detected.name}%`]
