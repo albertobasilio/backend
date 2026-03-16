@@ -143,7 +143,7 @@ const RecipeDetailPage = () => {
     };
 
     const getRecipeImage = (recipe) => {
-        if (recipe?.image_url && recipe.image_url.startsWith('http')) return recipe.image_url;
+        if (recipe?.image_url && (recipe.image_url.startsWith('http') || recipe.image_url.startsWith('/'))) return recipe.image_url;
         
         const foodImages = [
             'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=500&q=80',

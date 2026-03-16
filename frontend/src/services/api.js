@@ -24,7 +24,7 @@ api.interceptors.response.use(
         if (error.response?.status === 401) {
             localStorage.removeItem('token');
             localStorage.removeItem('user');
-            window.location.href = '/login';
+            // We don't force redirect here to allow AuthContext to handle it or retry as guest
         }
         return Promise.reject(error);
     }

@@ -24,6 +24,8 @@ import FastRecipesPage from './pages/FastRecipesPage';
 import AdminDashboardPage from './pages/AdminDashboardPage';
 import AdminRecipesPage from './pages/AdminRecipesPage';
 
+import GuestLock from './components/GuestLock';
+
 const ProtectedRoute = () => {
     const { user, loading } = useAuth();
     if (loading) {
@@ -37,6 +39,14 @@ const ProtectedRoute = () => {
     
     if (!user) return <Navigate to="/login" />;
     
+    return <Outlet />;
+};
+
+const RestrictGuestRoute = ({ featureName }) => {
+    const { user } = useAuth();
+    if (user?.role === 'guest') {
+        return <GuestLock featureName={featureName} />;
+    }
     return <Outlet />;
 };
 
@@ -74,20 +84,42 @@ const AppRoutes = () => {
 
                 {/* Protected routes */}
                 <Route element={<ProtectedRoute />}>
-                    <Route path="/scan" element={<ScanPage />} />
-                    <Route path="/profile" element={<ProfilePage />} />
-                    <Route path="/settings" element={<SettingsPage />} />
-                    <Route path="/feedback" element={<FeedbackPage />} />
+                    
+                    <Route element={<RestrictGuestRoute featureName="Análise com IA" />}>
+                        <Route path="/scan" element={<ScanPage />} />
+                    </Route>
+                    
+                    <Route element={<RestrictGuestRoute featureName="Perfil de Utilizador" />}>
+                        <Route path="/profile" element={<ProfilePage />} />
+                    </Route>
+                    
+                    <Route element={<RestrictGuestRoute featureName="Configurações" />}>
+                        <Route path="/settings" element={<SettingsPage />} />
+                    </Route>
+                    
+                    <Route element={<RestrictGuestRoute featureName="Feedback" />}>
+                        <Route path="/feedback" element={<FeedbackPage />} />
+                    </Route>
                     
                     <Route element={<PlanRoute minPlan="basic" />}>
-                        <Route path="/meal-plan" element={<MealPlanPage />} />
-                        <Route path="/favorites" element={<FavoritesPage />} />
-                        <Route path="/history" element={<HistoryPage />} />
+                        <Route element={<RestrictGuestRoute featureName="Plano de Refeição" />}>
+                            <Route path="/meal-plan" element={<MealPlanPage />} />
+                        </Route>
+                        <Route element={<RestrictGuestRoute featureName="Meus Favoritos" />}>
+                            <Route path="/favorites" element={<FavoritesPage />} />
+                        </Route>
+                        <Route element={<RestrictGuestRoute featureName="Histórico" />}>
+                            <Route path="/history" element={<HistoryPage />} />
+                        </Route>
                     </Route>
                     
                     <Route element={<PlanRoute minPlan="pro" />}>
-                        <Route path="/shopping-list" element={<ShoppingListPage />} />
-                        <Route path="/nutrition" element={<NutritionPage />} />
+                        <Route element={<RestrictGuestRoute featureName="Lista de Compras" />}>
+                            <Route path="/shopping-list" element={<ShoppingListPage />} />
+                        </Route>
+                        <Route element={<RestrictGuestRoute featureName="Nutrição" />}>
+                            <Route path="/nutrition" element={<NutritionPage />} />
+                        </Route>
                     </Route>
                     
                     <Route element={<AdminRoute />}>

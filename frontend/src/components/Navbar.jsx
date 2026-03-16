@@ -39,24 +39,14 @@ const Navbar = () => {
         return currentIdx >= minIdx;
     };
 
-    const guestNavItems = [
-        { path: '/recipes', icon: ChefHat, label: t('common.recipes'), minPlan: 'free' },
-        { path: '/fast-recipes', icon: Zap, label: t('common.fastRecipes'), minPlan: 'free' },
-        { path: '/scan', icon: ScanLine, label: t('common.scan'), minPlan: 'free' },
-        { path: '/challenges', icon: Shield, label: t('common.challenges'), minPlan: 'free' },
-        { path: '/plans', icon: CreditCard, label: t('common.plans'), minPlan: 'free' },
-    ];
-
-    const navItems = !user 
-        ? guestNavItems
-        : user?.role === 'admin'
-            ? [
-                ...baseNavItems,
-                { path: '/admin', icon: Shield, label: 'Admin', minPlan: 'free' },
-                { path: '/admin/users', icon: User, label: t('common.users') || 'Utilizadores', minPlan: 'free' },
-                { path: '/admin/recipes', icon: ChefHat, label: t('common.recipes'), minPlan: 'free' }
-            ]
-            : baseNavItems;
+    const navItems = user?.role === 'admin'
+        ? [
+            ...baseNavItems,
+            { path: '/admin', icon: Shield, label: 'Admin', minPlan: 'free' },
+            { path: '/admin/users', icon: User, label: t('common.users') || 'Utilizadores', minPlan: 'free' },
+            { path: '/admin/recipes', icon: ChefHat, label: t('common.recipes'), minPlan: 'free' }
+        ]
+        : baseNavItems;
 
     const handleLogout = () => {
         logout();
@@ -179,7 +169,9 @@ const Navbar = () => {
                     {navItems.map(item => {
                         const Icon = item.icon;
                         const isProtected = item.path === '/scan' || item.minPlan !== 'free';
-                        const targetPath = (!user && isProtected) ? '/login' : (hasPlan(item.minPlan) ? item.path : '/plans');
+                        // For guests, let them click and see the GuestLock.
+                        // For logged-in users, check plan.
+                        const targetPath = user?.role === 'guest' ? item.path : (hasPlan(item.minPlan) ? item.path : '/plans');
                         
                         return (
                             <NavLink
@@ -230,10 +222,10 @@ const Navbar = () => {
             {mobileOpen && <div className="sidebar-overlay" onClick={() => setMobileOpen(false)} />}
 
             <div className="mobile-bottom-nav show-mobile">
-                {(user ? navItems.filter(item => item.path !== '/settings' && !item.path.startsWith('/admin')) : guestNavItems).slice(0, 5).map(item => {
+                {navItems.filter(item => item.path !== '/settings' && !item.path.startsWith('/admin')).slice(0, 5).map(item => {
                     const Icon = item.icon;
                     const isProtected = item.path === '/scan' || item.minPlan !== 'free';
-                    const targetPath = (!user && isProtected) ? '/login' : (hasPlan(item.minPlan) ? item.path : '/plans');
+                    const targetPath = user?.role === 'guest' ? item.path : (hasPlan(item.minPlan) ? item.path : '/plans');
                     
                     return (
                         <NavLink
