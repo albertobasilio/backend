@@ -63,8 +63,8 @@ exports.register = asyncHandler(async (req, res) => {
     const hashedPassword = await bcrypt.hash(password, 10);
 
     const [result] = await db.query(
-        'INSERT INTO users (name, email, password, phone, region) VALUES (?, ?, ?, ?, ?)',
-        [name, email, hashedPassword, phone || null, region || 'Maputo']
+        'INSERT INTO users (name, email, password, phone, region, plan) VALUES (?, ?, ?, ?, ?, ?)',
+        [name, email, hashedPassword, phone || null, region || 'Maputo', 'free']
     );
 
     // Create default dietary profile
@@ -86,7 +86,7 @@ exports.register = asyncHandler(async (req, res) => {
             name,
             email,
             region: region || 'Maputo',
-            plan: 'premium',
+            plan: 'free',
             role: 'user'
         }
     });
@@ -317,3 +317,4 @@ exports.resetPassword = asyncHandler(async (req, res) => {
 
     res.json({ message: 'Senha redefinida com sucesso.' });
 });
+
